@@ -18,20 +18,27 @@ playerAngle = [0, 0]
 
 # Rendering variables
 gridSize = 50
-cubes = []
+tiles = []
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
-# Create cubes grid
-for z in range(20):
+# Create tiles grid
+'''for z in range(20):
     for x in range(20):
-        cubes.append(
-            [[[x * gridSize, 0, z * gridSize],
-             [x * gridSize + gridSize, 0, z * gridSize],
-             [x * gridSize + gridSize, 0, z * gridSize + gridSize],
-             [x * gridSize, 0, z * gridSize + gridSize]]]
-        )
+        tiles.append([
+            [x * gridSize, 0, z * gridSize],
+            [x * gridSize + gridSize, 0, z * gridSize],
+            [x * gridSize + gridSize, 0, z * gridSize + gridSize],
+            [x * gridSize, 0, z * gridSize + gridSize]
+        ])'''
+
+for i in range(420):
+    if i % 21 != 20:
+        tiles.append([i, i + 1, i + 20, i + 21])
+
+tiles = np.array(tiles)
+points = np.array([[x * gridSize, 0, z * gridSize] for x in range(21) for z in range(21)])
 
 # Function to calculate the intersection of a line with the z=10 plane
 def line_intersection(point1, point2):
@@ -106,28 +113,53 @@ while True:
     if keys[pygame.K_LSHIFT]:
         playerPos[1] -= 5
 
-    # Render 3D cubes
+    # Render 3D tiles
     distances = []
     polygons = []
 
-    for cube in cubes:
-        for face in cube:
-            points = [rotate(point) for point in face]
-            polygon = []
-            for point in points:
-                if point[2] > 0:
-                    polygon.append(project(point))
-                else:
-                    point2 = points[points.index(point) - 1]
-                    if point2[2] > 0:
-                        polygon.append(project(line_intersection(point, point2)))
-                    point2 = points[(points.index(point) + 1) % len(points)]
-                    if point2[2] > 0:
-                        polygon.append(project(line_intersection(point, point2)))
+    dx = points[:, 0] - playerPos[0]
+    dy = points[:, 1] - playerPos[1]
+    dz = points[:, 2] - playerPos[2]
+   
+    dzcosa = dz * cosa
+    dxsina = dx * sina
+    zcaxsa = dzcosa - dxsina
 
-            if len(polygon) > 2 and any(0 < p[0] < screenWidth and 0 < p[1] < screenHeight for p in polygon):
-                polygons.append(polygon)
-                distances.append(sum(p[0]**2 + p[1]**2 + p[2]**2 for p in points) / 4)
+    rotatedPoints = np.column_stack((
+        dz * sina + dx * cosa,  
+        dy * cosb - zcaxsa * sinb,  
+        zcaxsa * cosb + dy * sinb  
+    ))
+
+    copy = rotatedPoints.copy()
+    copy[copy <= 0] = None
+    filteredPoints = copy.copy()
+
+    projectedPoints = np.column_stack((
+        filteredPoints[:, 0] / filteredPoints[:, 2] * screenDistance + screenCenter[0],  
+        filteredPoints[:, 1] / filteredPoints[:, 2] * -screenDistance + screenCenter[1]  
+    ))
+
+    #for tile in tiles:
+
+
+    for tile in tiles:
+        points = [rotate(point) for point in tile]
+        polygon = []
+        for point in points:
+            if point[2] > 0:
+                polygon.append(project(point))
+            else:
+                point2 = points[points.index(point) - 1]
+                if point2[2] > 0:
+                    polygon.append(project(line_intersection(point, point2)))
+                point2 = points[(points.index(point) + 1) % len(points)]
+                if point2[2] > 0:
+                    polygon.append(project(line_intersection(point, point2)))
+
+        if len(polygon) > 2 and any(0 < p[0] < screenWidth and 0 < p[1] < screenHeight for p in polygon):
+            polygons.append(polygon)
+            distances.append(sum(p[0]**2 + p[1]**2 + p[2]**2 for p in points) / 4)
 
     sorted_polygons = sort_list(polygons, distances)
 
