@@ -172,11 +172,25 @@ while True:
                         else:
                             point2 = points[points.index(point) - 1]
                             if point2[2] > 0:
-                                polygon.append(project(line_intersection(point, point2)))
+                                intpoint = line_intersection(point, point2)
+                                tintpoint = tuple(intpoint)
+                                if tintpoint in cache:
+                                    polygon.append(cache[tintpoint])
+                                else:
+                                    pintpoint = project(intpoint)
+                                    polygon.append(pintpoint)
+                                    cache[tuple(intpoint)] = pintpoint
 
                             point2 = points[(points.index(point) + 1) % len(points)]
                             if point2[2] > 0:
-                                polygon.append(project(line_intersection(point, point2)))
+                                intpoint = line_intersection(point, point2)
+                                tintpoint = tuple(intpoint)
+                                if tintpoint in cache:
+                                    polygon.append(cache[tintpoint])
+                                else:
+                                    pintpoint = project(intpoint)
+                                    polygon.append(pintpoint)
+                                    cache[tuple(intpoint)] = pintpoint
 
                 if len(polygon)>2:
                     maxx = max(polygon, key=lambda x: x[0])[0]
