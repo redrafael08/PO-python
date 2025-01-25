@@ -25,6 +25,17 @@ pygame.mouse.set_visible(False)
 
 
 for z in range(50):
+    row = []
+    for x in range(50):
+        row.append(1)
+    tiles.append(row)
+
+tiles[3][3] = 0
+
+
+
+'''
+for z in range(50):
     for x in range(50):
         tiles.append(
             [[x * gridSize, 0, z * gridSize],
@@ -32,7 +43,7 @@ for z in range(50):
              [x * gridSize + gridSize, 0, z * gridSize + gridSize],
              [x * gridSize, 0, z * gridSize + gridSize]]
         )
-
+'''
 
 
 
@@ -108,24 +119,30 @@ while True:
 
     polygons = []
 
-    for tile in tiles:
+    for z, row in enumerate(tiles):
+        for x, column in enumerate(row):
+            if column == 1:
+                tile = [[x*gridSize,0,z*gridSize],
+                        [x*gridSize,0,(z+1)*gridSize],
+                        [(x+1)*gridSize,0,(z+1)*gridSize],
+                        [(x+1)*gridSize,0,z*gridSize]]
+                        
+                points = [rotate(point) for point in tile]
+                polygon = []
+                for point in points:
+                    if point[2] > 0:
+                        polygon.append(project(point))
+                    else:
+                        point2 = points[points.index(point) - 1]
+                        if point2[2] > 0:
+                            polygon.append(project(line_intersection(point, point2)))
+                        point2 = points[(points.index(point) + 1) % len(points)]
+                        if point2[2] > 0:
+                            polygon.append(project(line_intersection(point, point2)))
 
-        points = [rotate(point) for point in tile]
-        polygon = []
-        for point in points:
-            if point[2] > 0:
-                polygon.append(project(point))
-            else:
-                point2 = points[points.index(point) - 1]
-                if point2[2] > 0:
-                    polygon.append(project(line_intersection(point, point2)))
-                point2 = points[(points.index(point) + 1) % len(points)]
-                if point2[2] > 0:
-                    polygon.append(project(line_intersection(point, point2)))
-
-        if len(polygon) > 2 and (0 < max(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < max(polygon, key=lambda x: x[1])[1] < screenHeight or 0 < min(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < min(polygon, key=lambda x: x[1])[1] < screenHeight):
-            color = ((tile[0][0]+tile[0][2])%155+100,0,0)
-            polygons.append([color, polygon])
+                if len(polygon) > 2 and (0 < max(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < max(polygon, key=lambda x: x[1])[1] < screenHeight or 0 < min(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < min(polygon, key=lambda x: x[1])[1] < screenHeight):
+                    color = ((tile[0][0]+tile[0][2])%155+100,0,0)
+                    polygons.append([color, polygon])
 
 
 
