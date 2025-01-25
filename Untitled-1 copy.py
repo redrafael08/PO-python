@@ -118,12 +118,12 @@ while True:
         playerPos[0] -= playerSpeed * math.cos(playerAngle[0] + math.radians(90)) * currentframe
         playerPos[2] -= playerSpeed * math.sin(playerAngle[0] + math.radians(90)) * currentframe
     if keys[pygame.K_SPACE] and playerPos[1] == 20:
-        veldown = -10
+        veldown = -2.5
         playerPos[1] = 21
 
     
     playerPos[1] -= veldown
-    veldown += 0.5
+    veldown += 0.015 * clock.get_rawtime()
 
     if playerPos[1] <= 20:
         playerPos[1] = 20
