@@ -17,20 +17,24 @@ playerSpeed = 0.1
 playerAngle = [0, 0]
 
 
-gridSize = 100
+gridSize = 20
 tiles = []
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
 
-for z in range(50):
+for z in range(20):
     row = []
-    for x in range(50):
-        row.append(1)
+    for x in range(20):
+        if x%2 == 1:
+            row.append(1)
+        else:
+            row.append(0)
+
     tiles.append(row)
 
-tiles[3][3] = 0
+
 
 
 
@@ -72,6 +76,8 @@ def project(point):
 
 
 
+veldown = 0
+
 while True:
     clock.tick(60)
     screen.fill((255, 255, 255))
@@ -111,10 +117,20 @@ while True:
     if keys[pygame.K_s]:
         playerPos[0] -= playerSpeed * math.cos(playerAngle[0] + math.radians(90)) * currentframe
         playerPos[2] -= playerSpeed * math.sin(playerAngle[0] + math.radians(90)) * currentframe
-    if keys[pygame.K_SPACE]:
-        playerPos[1] += 5
-    if keys[pygame.K_LSHIFT]:
-        playerPos[1] -= 5
+    if keys[pygame.K_SPACE] and playerPos[1] == 20:
+        veldown = -10
+        playerPos[1] = 21
+
+    
+    playerPos[1] -= veldown
+    veldown += 1
+
+    if playerPos[1] <= 20:
+        playerPos[1] = 20
+
+
+    
+
 
 
     polygons = []
