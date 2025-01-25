@@ -124,12 +124,13 @@ while True:
                     polygon.append(project(line_intersection(point, point2)))
 
         if len(polygon) > 2 and (0 < max(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < max(polygon, key=lambda x: x[1])[1] < screenHeight or 0 < min(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < min(polygon, key=lambda x: x[1])[1] < screenHeight):
-            polygons.append(polygon)
+            color = ((tile[0][0]+tile[0][2])%155+100,0,0)
+            polygons.append([color, polygon])
 
 
 
     for polygon in polygons:
-        pygame.draw.polygon(screen, (sum(polygon[0])%255, 0, 0), polygon)
+        pygame.draw.polygon(screen, polygon[0], polygon[1])
 
 
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
@@ -138,3 +139,4 @@ while True:
     screen.blit(text, (100, 200))
 
     pygame.display.update()
+
