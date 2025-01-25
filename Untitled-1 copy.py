@@ -24,10 +24,10 @@ font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
 
-for z in range(20):
+for z in range(40):
     row = []
-    for x in range(20):
-        if x%2 == 1:
+    for x in range(40):
+        if (x+z)%2 == 1:
             row.append(1)
         else:
             row.append(0)
@@ -123,7 +123,7 @@ while True:
 
     
     playerPos[1] -= veldown
-    veldown += 1
+    veldown += 0.5
 
     if playerPos[1] <= 20:
         playerPos[1] = 20
@@ -155,10 +155,15 @@ while True:
                         point2 = points[(points.index(point) + 1) % len(points)]
                         if point2[2] > 0:
                             polygon.append(project(line_intersection(point, point2)))
-
-                if len(polygon) > 2 and (0 < max(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < max(polygon, key=lambda x: x[1])[1] < screenHeight or 0 < min(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < min(polygon, key=lambda x: x[1])[1] < screenHeight):
-                    color = ((tile[0][0]+tile[0][2])%155+100,0,0)
-                    polygons.append([color, polygon])
+                if len(polygon)>2:
+                    maxx = max(polygon, key=lambda x: x[0])[0]
+                    minx = min(polygon, key=lambda x: x[0])[0]
+                    maxy = max(polygon, key=lambda x: x[1])[1]
+                    miny = min(polygon, key=lambda x: x[1])[1]
+                    
+                    if maxx-minx and maxy-miny > 0 and (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
+                        color = ((tile[0][0]+tile[0][2])%155+100,0,0)
+                        polygons.append([color, polygon])
 
 
 
@@ -172,4 +177,5 @@ while True:
     screen.blit(text, (100, 200))
 
     pygame.display.update()
+
 
