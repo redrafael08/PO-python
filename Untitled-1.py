@@ -35,7 +35,7 @@ pygame.mouse.set_visible(False)
 
 for i in range(420):
     if i % 21 != 20:
-        tiles.append([i, i + 1, i + 21, i + 20])
+        tiles.append([i, i + 1, i + 22, i + 21])
 
 tiles = np.array(tiles)
 points = np.array([[x * gridSize, 0, z * gridSize] for x in range(21) for z in range(21)])
@@ -151,21 +151,22 @@ while True:
 
     for tile in tiles:
         polygon = []
-        if not all(x in otherPoints for x in tile):
+        if not any(x in otherPoints for x in tile):
             polygon = projectedPoints[tile]
-        else:
+        elif not all(x in otherPoints for x in tile):
             for i in tile:
-                point = projectedPoints[i]
                 if i in otherPoints:
+                    point = rotatedPoints[i]
                     pointIndex = tile[(np.where(tile == i)[0][0] - 1) % 4]
-                    point2 = projectedPoints[pointIndex]
+                    point2 = rotatedPoints[pointIndex]
                     if not pointIndex in otherPoints:
                         polygon.append(project(line_intersection(point, point2)))
                     pointIndex = tile[(np.where(tile == i)[0][0] + 1) % 4]
-                    point2 = projectedPoints[pointIndex]
+                    point2 = rotatedPoints[pointIndex]
                     if not pointIndex in otherPoints:
                         polygon.append(project(line_intersection(point, point2)))
                 else:
+                    point = projectedPoints[i]
                     polygon.append(point)
 
         if len(polygon) > 2 and any(0 < p[0] < screenWidth and 0 < p[1] < screenHeight for p in polygon):
