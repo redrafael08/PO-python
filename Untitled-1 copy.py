@@ -24,8 +24,8 @@ font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
 
-for z in range(30):
-    for x in range(30):
+for z in range(50):
+    for x in range(50):
         tiles.append(
             [[x * gridSize, 0, z * gridSize],
              [x * gridSize + gridSize, 0, z * gridSize],
@@ -123,7 +123,7 @@ while True:
                 if point2[2] > 0:
                     polygon.append(project(line_intersection(point, point2)))
 
-        if len(polygon) > 2 and any(0 < p[0] < screenWidth and 0 < p[1] < screenHeight for p in polygon):
+        if len(polygon) > 2 and (0 < max(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < max(polygon, key=lambda x: x[1])[1] < screenHeight or 0 < min(polygon, key=lambda x: x[0])[0] < screenWidth or 0 < min(polygon, key=lambda x: x[1])[1] < screenHeight):
             polygons.append(polygon)
 
 
