@@ -101,6 +101,10 @@ while True:
     if keys[pygame.K_DOWN]:
         playerAngle[1] -= math.radians(0.1) * currentframe
 
+    if playerAngle[1] > math.radians(90):
+        playerAngle[1] = math.radians(90)
+    if playerAngle[1] < math.radians(-90):
+        playerAngle[1] = math.radians(-90) 
 
     sina, cosa = math.sin(playerAngle[0]), math.cos(playerAngle[0])
     sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])

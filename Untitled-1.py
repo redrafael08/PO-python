@@ -35,7 +35,7 @@ pygame.mouse.set_visible(False)
 
 for i in range(420):
     if i % 21 != 20:
-        tiles.append([i, i + 1, i + 20, i + 21])
+        tiles.append([i, i + 1, i + 21, i + 20])
 
 tiles = np.array(tiles)
 points = np.array([[x * gridSize, 0, z * gridSize] for x in range(21) for z in range(21)])
@@ -91,6 +91,11 @@ while True:
         playerAngle[1] += math.radians(0.1) * currentframe
     if keys[pygame.K_DOWN]:
         playerAngle[1] -= math.radians(0.1) * currentframe
+
+    if playerAngle[1] > math.radians(90):
+        playerAngle[1] = math.radians(90)
+    if playerAngle[1] < math.radians(-90):
+        playerAngle[1] = math.radians(-90) 
 
     # Update player position based on keyboard input
     sina, cosa = math.sin(playerAngle[0]), math.cos(playerAngle[0])
