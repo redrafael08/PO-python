@@ -127,7 +127,7 @@ while True:
 
     
     playerPos[1] -= veldown
-    veldown += 0.015 * clock.get_rawtime()
+    veldown += 0.01 * clock.get_rawtime()
 
     if playerPos[1] <= 20:
         playerPos[1] = 20
