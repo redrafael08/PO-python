@@ -132,7 +132,11 @@ while True:
     ))
 
     copy = rotatedPoints.copy()
-    copy[copy <= 0] = None
+    otherPoints = []
+    for x in range(len(copy)):
+        if (copy[x][2] <= 0):
+            copy[x] = [0, 0, 1]
+            otherPoints.append(x)
     filteredPoints = copy.copy()
 
     projectedPoints = np.column_stack((
@@ -140,36 +144,54 @@ while True:
         filteredPoints[:, 1] / filteredPoints[:, 2] * -screenDistance + screenCenter[1]  
     ))
 
-    #for tile in tiles:
-
-
     for tile in tiles:
-        points = [rotate(point) for point in tile]
         polygon = []
-        for point in points:
-            if point[2] > 0:
-                polygon.append(project(point))
-            else:
-                point2 = points[points.index(point) - 1]
-                if point2[2] > 0:
-                    polygon.append(project(line_intersection(point, point2)))
-                point2 = points[(points.index(point) + 1) % len(points)]
-                if point2[2] > 0:
-                    polygon.append(project(line_intersection(point, point2)))
+        if not all(x in otherPoints for x in tile):
+            polygon = projectedPoints[tile]
+        else:
+            for i in tile:
+                point = projectedPoints[i]
+                if i in otherPoints:
+                    pointIndex = tile[(np.where(tile == i)[0][0] - 1) % 4]
+                    point2 = projectedPoints[pointIndex]
+                    if not pointIndex in otherPoints:
+                        polygon.append(project(line_intersection(point, point2)))
+                    pointIndex = tile[(np.where(tile == i)[0][0] + 1) % 4]
+                    point2 = projectedPoints[pointIndex]
+                    if not pointIndex in otherPoints:
+                        polygon.append(project(line_intersection(point, point2)))
+                else:
+                    polygon.append(point)
 
         if len(polygon) > 2 and any(0 < p[0] < screenWidth and 0 < p[1] < screenHeight for p in polygon):
             polygons.append(polygon)
-            distances.append(sum(p[0]**2 + p[1]**2 + p[2]**2 for p in points) / 4)
 
-    sorted_polygons = sort_list(polygons, distances)
 
-    for polygon in sorted_polygons:
+    '''for tile in tiles:
+
+        tilePoints = [rotate(point) for point in tile]
+        polygon = []
+        for tilePoint in tilePoints:
+            if tilePoint[2] > 0:
+                polygon.append(project(tilePoint))
+            else:
+                point2 = tilePoints[tilePoints.index(tilePoint) - 1]
+                if point2[2] > 0:
+                    polygon.append(project(line_intersection(tilePoint, point2)))
+                point2 = tilePoints[(tilePoints.index(tilePoint) + 1) % len(tilePoints)]
+                if point2[2] > 0:
+                    polygon.append(project(line_intersection(tilePoint, point2)))
+
+        if len(polygon) > 2 and any(0 < p[0] < screenWidth and 0 < p[1] < screenHeight for p in polygon):
+            polygons.append(polygon)'''
+
+    for polygon in polygons:
         pygame.draw.polygon(screen, (sum(polygon[0])%255, 0, 0), polygon)
 
     # Display FPS and polygon count
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
-    text = font.render(f"{len(sorted_polygons)}", True, (0, 0, 0))
+    text = font.render(f"{len(polygons)}", True, (0, 0, 0))
     screen.blit(text, (100, 200))
 
     pygame.display.update()
