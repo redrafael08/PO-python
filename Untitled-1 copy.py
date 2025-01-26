@@ -125,7 +125,6 @@ while True:
                 distance = ((projectile[0][0]-playerPos[0])**2+(projectile[0][1]-playerPos[1])**2+(projectile[0][2]-playerPos[2])**2)**0.5
             # if distance < 20:
 
-                tiles
 
                 if projectile[0][0]-playerPos[0] != 0:
                     playerSpeed[0] -= 10000/(projectile[0][0]-playerPos[0])
@@ -195,7 +194,7 @@ while True:
         if projectile[0][1] < 0:
 
             rprojectile = rotate(projectile[0])
-            if rprojectile[1] > 10:
+            if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 1/rprojectile[2]*screenDistance)
 
