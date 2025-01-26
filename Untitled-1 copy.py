@@ -3,8 +3,6 @@ import pygame
 from sys import exit
 import random
 import pygame.gfxdraw
-#import numpy as np
-
 
 pygame.init()
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
@@ -24,10 +22,14 @@ clock = pygame.time.Clock()
 font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
+projectiles = []
 
-for z in range(40):
+veldown = 0
+
+
+for z in range(20):
     row = []
-    for x in range(40):
+    for x in range(20):
         if (x+z)%1 == 0:
             row.append(1)
         else:
@@ -35,20 +37,6 @@ for z in range(40):
 
     tiles.append(row)
 
-
-
-
-
-'''
-for z in range(50):
-    for x in range(50):
-        tiles.append(
-            [[x * gridSize, 0, z * gridSize],
-             [x * gridSize + gridSize, 0, z * gridSize],
-             [x * gridSize + gridSize, 0, z * gridSize + gridSize],
-             [x * gridSize, 0, z * gridSize + gridSize]]
-        )
-'''
 
 
 
@@ -78,8 +66,6 @@ def project(point):
 
 
 
-
-veldown = 0
 
 while True:
     clock.tick(30)
@@ -127,7 +113,8 @@ while True:
     if keys[pygame.K_SPACE] and playerPos[1] == 20:
         veldown = -2.5
         playerPos[1] = 21
-
+    if keys[pygame.K_q]:
+        projectiles.append([playerPos.copy(),playerAngle])
     
     playerPos[1] -= veldown
     veldown += 0.1
@@ -207,13 +194,13 @@ while True:
                     
                     if (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
                         color = ((tile[0][0]+tile[0][2])%155+100,0,0)
-                        
-                      #  
-                    #    print(polygon)
-                      #  if miny < screenHeight:
-                       #     print(miny)
                         pygame.gfxdraw.filled_polygon(screen, polygon, color)
-                      #  pygame.draw.polygon(screen, color, polygon)
+
+    for projectile in projectiles:
+        rprojectile = rotate(projectile[0])
+        if rprojectile[2] > 0:
+            pprojectile = project(rprojectile)
+            pygame.draw.circle(screen, (0,0,0), pprojectile, 5/rprojectile[2]*screenDistance)
 
 
 
@@ -226,6 +213,7 @@ while True:
     text = font.render(f"{a}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
     pygame.display.update()
+
 
 
 
