@@ -127,7 +127,7 @@ while True:
 
     
     playerPos[1] -= veldown
-    veldown += 0.01 
+    veldown += 0.1
 
     if playerPos[1] <= 20:
         playerPos[1] = 20
@@ -163,11 +163,12 @@ while True:
 
                     else:
 
-                        a +=1
+                        
                         if point[2] > 0:
                             ppoint = project(point)
                             polygon.append(ppoint)
                             cache[tpoint] = ppoint
+                            a +=1
 
                         else:
                             point2 = points[points.index(point) - 1]
@@ -180,6 +181,7 @@ while True:
                                     pintpoint = project(intpoint)
                                     polygon.append(pintpoint)
                                     cache[tuple(intpoint)] = pintpoint
+                                    a +=1
 
                             point2 = points[(points.index(point) + 1) % len(points)]
                             if point2[2] > 0:
@@ -191,6 +193,7 @@ while True:
                                     pintpoint = project(intpoint)
                                     polygon.append(pintpoint)
                                     cache[tuple(intpoint)] = pintpoint
+                                    a +=1
 
                 if len(polygon)>2:
                     maxx = max(polygon, key=lambda x: x[0])[0]
@@ -200,12 +203,10 @@ while True:
                     
                     if maxx-minx and maxy-miny > 0 and (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
                         color = ((tile[0][0]+tile[0][2])%155+100,0,0)
-                        polygons.append([color, polygon])
+                        pygame.draw.polygon(screen, color, polygon)
 
 
 
-    for polygon in polygons:
-        pygame.draw.polygon(screen, polygon[0], polygon[1])
 
 
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
