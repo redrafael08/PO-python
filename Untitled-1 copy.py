@@ -12,7 +12,8 @@ screenCenter = (screenWidth / 2, screenHeight / 2)
 
 
 playerPos = [200, 200, 200]
-playerSpeed = 0.1*10
+playerSpeed = [0,0,0]
+walkSpeed = 0.1*10
 playerAngle = [0, 0]
 
 
@@ -82,13 +83,13 @@ while True:
 
 
     if keys[pygame.K_LEFT]:
-        playerAngle[0] += math.radians(1)
+        playerAngle[0] += math.radians(5)
     if keys[pygame.K_RIGHT]:
-        playerAngle[0] -= math.radians(1)
+        playerAngle[0] -= math.radians(5)
     if keys[pygame.K_UP]:
-        playerAngle[1] += math.radians(1)
+        playerAngle[1] += math.radians(5)
     if keys[pygame.K_DOWN]:
-        playerAngle[1] -= math.radians(1)
+        playerAngle[1] -= math.radians(5)
 
     if playerAngle[1] > math.radians(90):
         playerAngle[1] = math.radians(90)
@@ -99,28 +100,69 @@ while True:
     sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])
 
     if keys[pygame.K_a]:
-        playerPos[0] -= playerSpeed * cosa 
-        playerPos[2] -= playerSpeed * sina 
+        playerPos[0] -= walkSpeed * cosa 
+        playerPos[2] -= walkSpeed * sina 
     if keys[pygame.K_d]:
-        playerPos[0] += playerSpeed * cosa 
-        playerPos[2] += playerSpeed * sina 
+        playerPos[0] += walkSpeed * cosa 
+        playerPos[2] += walkSpeed * sina 
     if keys[pygame.K_w]:
-        playerPos[0] += playerSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerPos[2] += playerSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+        playerPos[0] += walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+        playerPos[2] += walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
     if keys[pygame.K_s]:
-        playerPos[0] -= playerSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerPos[2] -= playerSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+        playerPos[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+        playerPos[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
     if keys[pygame.K_SPACE] and playerPos[1] == 20:
         veldown = -2.5
         playerPos[1] = 21
     if keys[pygame.K_q]:
-        projectiles.append([playerPos.copy(),playerAngle])
-    
-    playerPos[1] -= veldown
+        projectiles.append([playerPos.copy(),[sina,sinb,cosa],0])
+    if keys[pygame.K_e]:
+        for projectile in projectiles:
+
+            if 0 < projectile[0][0] < 20*gridSize and 0 < projectile[0][2] < 20*gridSize and projectile[0][1] <= 5 and tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] != 0:
+                tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] = 0.5
+                distance = ((projectile[0][0]-playerPos[0])**2+(projectile[0][1]-playerPos[1])**2+(projectile[0][2]-playerPos[2])**2)**0.5
+            # if distance < 20:
+
+                tiles
+
+                if projectile[0][0]-playerPos[0] != 0:
+                    playerSpeed[0] -= 1000/(projectile[0][0]-playerPos[0])
+                    if playerSpeed[0] > 10:
+                        playerSpeed[0] = 10
+                    if playerSpeed[0] < -10:
+                        playerSpeed[0] = -10
+                if (projectile[0][1]-10)-playerPos[1] != 0:
+                    playerSpeed[1] -= 1000/((projectile[0][1]-10)-playerPos[1])
+                    if playerSpeed[1] > 20:
+                        playerSpeed[1] = 20
+                    if playerSpeed[1] < -20:
+                        playerSpeed[1] = -20
+                if projectile[0][2]-playerPos[2] != 0:
+                    playerSpeed[2] -= 1000/(projectile[0][2]-playerPos[2])
+                    if playerSpeed[2] > 10:
+                        playerSpeed[2] = 10
+                    if playerSpeed[2] < -10:
+                        playerSpeed[2] = -10
+
+                projectiles.remove(projectile)
+        
+
+
+    playerPos[0] += playerSpeed[0]
+    playerPos[1] += playerSpeed[1]-veldown
+    playerPos[2] += playerSpeed[2]
+
+    playerSpeed[0] *= 0.99
+    playerSpeed[1] *= 0.99
+    playerSpeed[2] *= 0.99
     veldown += 0.1
+
+    
 
     if playerPos[1] <= 20:
         playerPos[1] = 20
+        playerSpeed = [0,0,0]
 
 
     
@@ -135,6 +177,9 @@ while True:
 
     for z, row in enumerate(tiles):
         for x, column in enumerate(row):
+
+            if column == 0.5:
+                column = 0
             
             if column == 1:
                 
@@ -197,10 +242,23 @@ while True:
                         pygame.gfxdraw.filled_polygon(screen, polygon, color)
 
     for projectile in projectiles:
+        projectile[0][0] -= projectile[1][0]*5
+        projectile[0][1] += projectile[1][1]*5-projectile[2]
+        projectile[0][2] += projectile[1][2]*5
+        projectile[2] += 0.1
         rprojectile = rotate(projectile[0])
-        if rprojectile[2] > 0:
+        if rprojectile[2] > 10:
             pprojectile = project(rprojectile)
             pygame.draw.circle(screen, (0,0,0), pprojectile, 5/rprojectile[2]*screenDistance)
+
+        if 0 < projectile[0][0] < 20*gridSize and 0 < projectile[0][2] < 20*gridSize and projectile[0][1] <= 5 and tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] == 1:
+            projectile[1] = [0,0,0]
+            projectile[0][1] = 5
+            projectile[2] = 0
+
+        
+        elif projectile[0][1] < -100:
+            projectiles.remove(projectile)
 
 
 
@@ -213,6 +271,7 @@ while True:
     text = font.render(f"{a}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
     pygame.display.update()
+
 
 
 
