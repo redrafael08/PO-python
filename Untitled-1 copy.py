@@ -2,6 +2,7 @@ import math
 import pygame
 from sys import exit
 import random
+import pygame.gfxdraw
 #import numpy as np
 
 
@@ -12,7 +13,7 @@ screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
 
-playerPos = [200, 500, 200]
+playerPos = [200, 200, 200]
 playerSpeed = 0.1*10
 playerAngle = [0, 0]
 
@@ -24,9 +25,9 @@ font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
 
-for z in range(20):
+for z in range(40):
     row = []
-    for x in range(20):
+    for x in range(40):
         if (x+z)%1 == 0:
             row.append(1)
         else:
@@ -70,9 +71,11 @@ def rotate(point):
 
 
 def project(point):
+
     projX = (point[0]) / (point[2]) * screenDistance + screenCenter[0]
     projY = -(point[1]) / (point[2]) * screenDistance + screenCenter[1]
     return [projX, projY]
+
 
 
 
@@ -164,7 +167,7 @@ while True:
                     else:
 
                         
-                        if point[2] > 0:
+                        if point[2] > 10:
                             ppoint = project(point)
                             polygon.append(ppoint)
                             cache[tpoint] = ppoint
@@ -172,10 +175,10 @@ while True:
 
                         else:
                             point2 = points[points.index(point) - 1]
-                            if point2[2] > 0:
+                            if point2[2] > 10:
                                 intpoint = line_intersection(point, point2)
                                 tintpoint = tuple(intpoint)
-                                if tintpoint in cache:
+                                if tintpoint in cache:                     
                                     polygon.append(cache[tintpoint])
                                 else:
                                     pintpoint = project(intpoint)
@@ -183,8 +186,9 @@ while True:
                                     cache[tuple(intpoint)] = pintpoint
                                     a +=1
 
-                            point2 = points[(points.index(point) + 1) % len(points)]
-                            if point2[2] > 0:
+                            point2 = points[(points.index(point) + 1) % 4]
+                            if point2[2] > 10:
+                                
                                 intpoint = line_intersection(point, point2)
                                 tintpoint = tuple(intpoint)
                                 if tintpoint in cache:
@@ -201,9 +205,15 @@ while True:
                     maxy = max(polygon, key=lambda x: x[1])[1]
                     miny = min(polygon, key=lambda x: x[1])[1]
                     
-                    if maxx-minx and maxy-miny > 0 and (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
+                    if (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
                         color = ((tile[0][0]+tile[0][2])%155+100,0,0)
-                        pygame.draw.polygon(screen, color, polygon)
+                        
+                      #  
+                    #    print(polygon)
+                      #  if miny < screenHeight:
+                       #     print(miny)
+                        pygame.gfxdraw.filled_polygon(screen, polygon, color)
+                      #  pygame.draw.polygon(screen, color, polygon)
 
 
 
@@ -216,5 +226,6 @@ while True:
     text = font.render(f"{a}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
     pygame.display.update()
+
 
 
