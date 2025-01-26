@@ -71,7 +71,7 @@ def project(point):
 
 while True:
     clock.tick(30)
-    screen.fill((255, 255, 255))
+    screen.fill((174, 255, 255))
 
 
     for event in pygame.event.get():
@@ -175,6 +175,8 @@ while True:
     else:
         touchground = False
 
+    # projection
+
 
     for projectile in projectiles:
 
@@ -185,18 +187,18 @@ while True:
             projectile[0][2] += projectile[1][2]*5
             projectile[2] += 0.1
 
-        if oldy > 1 and 0 < projectile[0][0] < 20*gridSize and 0 < projectile[0][2] < 20*gridSize and projectile[0][1] <= 1 and tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] == 1:
+        if oldy > 2 and 0 < projectile[0][0] < 20*gridSize and 0 < projectile[0][2] < 20*gridSize and projectile[0][1] <= 2 and tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] == 1:
             projectile[1] = [0,0,0]
-            projectile[0][1] = 1
+            projectile[0][1] = 2
             projectile[2] = 0
             projectile[3] = True
 
-        if projectile[0][1] < 0:
+        if (projectile[0][1] < 2 and playerPos[1] >= 20) or (projectile[0][1] >= 2 and playerPos[1] < 20):
 
             rprojectile = rotate(projectile[0])
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 1/rprojectile[2]*screenDistance)
+                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
 
         
@@ -275,12 +277,12 @@ while True:
                         pygame.gfxdraw.filled_polygon(screen, polygon, color)
 
     for projectile in projectiles:
-        if projectile[0][1] >= 0:
+        if (projectile[0][1] >= 2 and playerPos[1] >= 20) or (projectile[0][1] < 2 and playerPos[1] < 20):
 
             rprojectile = rotate(projectile[0])
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 1/rprojectile[2]*screenDistance)
+                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
 
 
