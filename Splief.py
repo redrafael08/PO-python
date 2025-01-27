@@ -15,7 +15,7 @@ playerPos = [200, 25, 200]
 playerSpeed = [0,0,0]
 walkSpeed = 3
 playerAngle = [0, 0]
-
+shotCooldown = 0
 
 touchground = False
 gridSize = 20
@@ -123,12 +123,13 @@ while True:
     if keys[pygame.K_SPACE] and touchground:
         playerSpeed[1] = 2.5
         playerPos[1] = 21
-    if keys[pygame.K_q]:
+    if keys[pygame.K_q] and shotCooldown == 0:
+        shotCooldown = 10
         randomness = 0.5
         xOffset = (random.random() - 0.5) * randomness
         yOffset = (random.random() - 0.5) * randomness
         zOffset = (random.random() - 0.5) * randomness
-        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -5 + xOffset, sinb * 5 + yOffset, cosa * cosb * 5 + zOffset], False))
+        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -5 + xOffset + playerSpeed[0], sinb * 5 + yOffset + playerSpeed[1], cosa * cosb * 5 + zOffset + playerSpeed[2]], False))
     if keys[pygame.K_e]:
         for projectile in projectiles:
 
@@ -161,6 +162,8 @@ while True:
     if touchground == False:
         playerSpeed[1] -= 0.1
 
+    if shotCooldown != 0:
+        shotCooldown -= 1
 
     oldplayery = playerPos[1]
     playerPos[0] += playerSpeed[0]
