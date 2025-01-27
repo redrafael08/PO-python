@@ -134,30 +134,28 @@ while True:
         for projectile in projectiles:
 
             if projectile.onGround == True:
-                difference = [playerPos[0] - projectile.pos[0], playerPos[1]    - projectile.pos[1], playerPos[2] - projectile.pos[2]]
+                difference = [playerPos[0] - projectile.pos[0], playerPos[1] - projectile.pos[1], playerPos[2] - projectile.pos[2]]
                 tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
                 distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
                 distance = distanceSqrd**0.5
                 direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
 
-                if difference[0] != 0:
-                    playerSpeed[0] -= direction[0]
-                    if playerSpeed[0] > 5:
-                        playerSpeed[0] = 5
-                    if playerSpeed[0] < -5:
-                        playerSpeed[0] = -5
-                if difference[1] - 20 != 0:
-                    playerSpeed[1] -= (direction[1] - 20)
-                    if playerSpeed[1] > 20:
-                        playerSpeed[1] = 20
-                    if playerSpeed[1] < -20:
-                        playerSpeed[1] = -20
-                if difference[2] != 0:
-                    playerSpeed[2] -= direction[2]
-                    if playerSpeed[2] > 5:
-                        playerSpeed[2] = 5
-                    if playerSpeed[2] < -5:
-                        playerSpeed[2] = -5
+                playerSpeed[0] += direction[0] / distance * 10
+                playerSpeed[1] -= (direction[1] - 5) / distance * 10
+                playerSpeed[2] += direction[2] / distance * 10
+                
+                if playerSpeed[0] > 5:
+                    playerSpeed[0] = 5
+                if playerSpeed[0] < -5:
+                    playerSpeed[0] = -5
+                if playerSpeed[1] > 20:
+                    playerSpeed[1] = 20
+                if playerSpeed[1] < -20:
+                    playerSpeed[1] = -20
+                if playerSpeed[2] > 5:
+                    playerSpeed[2] = 5
+                if playerSpeed[2] < -5:
+                    playerSpeed[2] = -5
 
                 projectiles.remove(projectile)
 
