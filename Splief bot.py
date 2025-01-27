@@ -10,6 +10,10 @@ screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
+test1 = 0
+test2 = 0
+test3 = 0
+
 class Player():
     def __init__(self, pos, vel, onGround):
         self.pos = pos
@@ -18,8 +22,7 @@ class Player():
     
     def AddExplosionVel(self, explosionPos):
         difference = [self.pos[0] - explosionPos[0], self.pos[1] - explosionPos[1], self.pos[2] - explosionPos[2]]
-        distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
-        distance = distanceSqrd**0.5
+        distance = length(difference)
         direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
 
         self.vel[0] += direction[0] / distance * 10
@@ -31,10 +34,10 @@ class Player():
             self.vel[0] = 5
         if self.vel[0] < -5:
             self.vel[0] = -5
-        if self.vel[1] > 20:
-            self.vel[1] = 20
-        if self.vel[1] < -20:
-            self.vel[1] = -20
+        if self.vel[1] > 10:
+            self.vel[1] = 10
+        if self.vel[1] < -10:
+            self.vel[1] = -10
         if self.vel[2] > 5:
             self.vel[2] = 5
         if self.vel[2] < -5:
@@ -47,6 +50,7 @@ shotCooldown = 0
 walkSpeed = 3
 
 bot = Player([200, 25, 200], [0,0,0], False)
+botcooldown = 60
 
 gridSize = 20
 tiles = []
@@ -71,7 +75,8 @@ for z in range(20):
     tiles.append(row)
 
 
-
+def length(vector):
+    return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
 
 def line_intersection(point1, point2):
     t = (10 - point1[2]) / (point2[2] - point1[2])
@@ -98,7 +103,7 @@ def project(point):
     return [projX, projY]
 
 def abovegrid(position, size):
-    if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
+    if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1) and position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] - size >= 0:
         return True
     else:
         return False
@@ -106,7 +111,8 @@ def abovegrid(position, size):
 class Projectile():
     def __init__(self, pos, vel, onGround, fromPlayer):
         self.pos = pos
-        self.vel = vel
+        randomness = 0.5
+        self.vel = [vel[0] + (random.random() - 0.5) * randomness, vel[1] + (random.random() - 0.5) * randomness, vel[2] + (random.random() - 0.5) * randomness]
         self.onGround = onGround
         self.fromPlayer = fromPlayer
 
@@ -165,11 +171,9 @@ while True:
         player.onGround = False
     if keys[pygame.K_q] and shotCooldown == 0:
         shotCooldown = 10
-        randomness = 0.5
-        xOffset = (random.random() - 0.5) * randomness
-        yOffset = (random.random() - 0.5) * randomness
-        zOffset = (random.random() - 0.5) * randomness
-        projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -5 + xOffset + player.vel[0], sinb * 5 + yOffset + player.vel[1], cosa * cosb * 5 + zOffset + player.vel[2]], False, True))
+        test1 = [sina * cosb * -5, sinb * 5, cosa * cosb * 5]
+        test2 = length(test1)
+        projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -5 + player.vel[0], sinb * 5 + player.vel[1], cosa * cosb * 5 + player.vel[2]], False, True))
     if keys[pygame.K_e]:
         for projectile in projectiles:
             if projectile.onGround and projectile.fromPlayer:
@@ -268,6 +272,28 @@ while True:
     else:
         bot.onGround = False
 
+    if botcooldown == 0:
+        direction = [player.pos[0] - bot.pos[0], player.pos[1] - bot.pos[1] + 30, player.pos[2] - bot.pos[2]]
+        distance = length(direction)
+        direction = [direction[0] / distance * 5, direction[1] / distance * 5, direction[2] / distance * 5]
+
+        projectiles.append(Projectile(bot.pos.copy(), direction + bot.vel, False, False))
+        if random.randint(1, 5) == 1:
+            for projectile in projectiles:
+                if projectile.onGround and not projectile.fromPlayer:
+                    player.AddExplosionVel(projectile.pos)
+                    bot.AddExplosionVel(projectile.pos)
+
+                    tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
+                    projectiles.remove(projectile)
+                
+            player.CapVel()
+            bot.CapVel()
+
+        botcooldown = 30
+    else:
+        botcooldown -= 1
+
     # Render spul
 
     polygons = []
@@ -343,9 +369,9 @@ while True:
     if rbotPos[2] > 10:
         pbot = project(rbotPos)
         size = 20/rbotPos[2]*screenDistance, 30/rbotPos[2]*screenDistance
-        pygame.draw.rect(screen, (0,0,0), (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33,size[0],size[1]))
+        #pygame.draw.rect(screen, (0,0,0), (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33,size[0],size[1]))
         botimgscale = pygame.transform.scale(botimg, size)
-      #  screen.blit(botimgscale, (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33))
+        screen.blit(botimgscale, (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33))
 
     for projectile in projectiles:
         if (projectile.pos[1] >= 2 and player.pos[1] >= 20) or (projectile.pos[1] < 2 and player.pos[1] < 20):
@@ -373,8 +399,8 @@ while True:
 
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
-    text = font.render(f"{round(player.pos[0]), round(player.pos[1]), round(player.pos[2])}", True, (0, 0, 0))
+    #text = font.render(f"{round(player.pos[0]), round(player.pos[1]), round(player.pos[2])}", True, (0, 0, 0))
     screen.blit(text, (100, 200))
-    text = font.render(f"{round(player.vel[0], 2), round(player.vel[1], 2), round(player.vel[2], 2)}", True, (0, 0, 0))
+    #text = font.render(f"{round(player.vel[0], 2), round(player.vel[1], 2), round(player.vel[2], 2)}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
     pygame.display.update()
