@@ -11,7 +11,7 @@ screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
 
-playerPos = [200, 200, 200]
+playerPos = [200, 25, 200]
 playerSpeed = [0,0,0]
 walkSpeed = 3
 playerAngle = [0, 0]
@@ -26,7 +26,6 @@ pygame.mouse.set_visible(False)
 
 projectiles = []
 
-veldown = 0
 
 
 for z in range(20):
@@ -102,7 +101,7 @@ while True:
         playerAngle[1] = math.radians(-90) 
 
     sina, cosa = math.sin(playerAngle[0]), math.cos(playerAngle[0])
-    sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])
+    sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])    
 
     if touchground:
         walkSpeed = 3
@@ -121,8 +120,8 @@ while True:
     if keys[pygame.K_s]:
         playerSpeed[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
         playerSpeed[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
-    if keys[pygame.K_SPACE] and playerPos[1] == 20:
-        veldown = -2.5
+    if keys[pygame.K_SPACE] and touchground:
+        playerSpeed[1] = 2.5
         playerPos[1] = 21
     if keys[pygame.K_q]:
         randomness = 0.5
@@ -159,7 +158,8 @@ while True:
 
                 projectiles.remove(projectile)
 
-
+    if touchground == False:
+        playerSpeed[1] -= 0.1
 
 
     oldplayery = playerPos[1]
@@ -167,32 +167,25 @@ while True:
     playerPos[1] += playerSpeed[1]
     playerPos[2] += playerSpeed[2]
 
-    playerSpeed[0] *= 0.99
-    playerSpeed[1] *= 0.99
-    playerSpeed[2] *= 0.99
-
 
     if touchground == False:
-        playerPos[1] -= veldown
-        veldown += 0.1
+        playerSpeed[0] *= 0.99
+        playerSpeed[2] *= 0.99
     else:
         playerSpeed[0] *= 0.4
-        playerSpeed[1] *= 0.4
         playerSpeed[2] *= 0.4
-
-    
+        if playerSpeed[0] < 0.001 and playerSpeed[0] > -0.001:
+            playerSpeed[0] = 0
+        if playerSpeed[2] < 0.001 and playerSpeed[0] > -0.001:
+            playerSpeed[2] = 0
 
     if playerPos[1] <= 20 and 0 < playerPos[0] < 20*gridSize and 0 < playerPos[2] < 20*gridSize and tiles[int(playerPos[2]/gridSize)][int(playerPos[0]/gridSize)] == 1:
         if oldplayery > 20:
             playerPos[1] = 20
-            playerSpeed = [0,0,0]
-            veldown = 0
+            playerSpeed[1] = 0
             touchground = True
     else:
         touchground = False
-
-    # projection
-
 
     for projectile in projectiles:
 
@@ -315,9 +308,9 @@ while True:
 
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
-    text = font.render(f"{playerPos}", True, (0, 0, 0))
+    text = font.render(f"{round(playerPos[0]), round(playerPos[1]), round(playerPos[2])}", True, (0, 0, 0))
     screen.blit(text, (100, 200))
-    text = font.render(f"{a}", True, (0, 0, 0))
+    text = font.render(f"{round(playerSpeed[0], 2), round(playerSpeed[1], 2), round(playerSpeed[2], 2)}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
     pygame.display.update()
 
