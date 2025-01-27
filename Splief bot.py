@@ -13,9 +13,13 @@ screenCenter = (screenWidth / 2, screenHeight / 2)
 
 playerPos = [200, 25, 200]
 playerSpeed = [0,0,0]
-walkSpeed = 3
 playerAngle = [0, 0]
+shotCooldown = 0
 
+walkSpeed = 3
+
+botPos = []
+botSpeed = [0,0,0]
 
 touchground = False
 gridSize = 20
@@ -66,10 +70,11 @@ def project(point):
     return [projX, projY]
 
 class Projectile():
-    def __init__(self, pos, vel, onGround):
+    def __init__(self, pos, vel, onGround, fromPlayer):
         self.pos = pos
         self.vel = vel
         self.onGround = onGround
+        self.fromPlayer = fromPlayer
 
 
 while True:
@@ -123,16 +128,16 @@ while True:
     if keys[pygame.K_SPACE] and touchground:
         playerSpeed[1] = 2.5
         playerPos[1] = 21
-    if keys[pygame.K_q]:
+    if keys[pygame.K_q] and shotCooldown == 0:
+        shotCooldown = 10
         randomness = 0.5
         xOffset = (random.random() - 0.5) * randomness
         yOffset = (random.random() - 0.5) * randomness
         zOffset = (random.random() - 0.5) * randomness
-        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -5 + xOffset, sinb * 5 + yOffset, cosa * cosb * 5 + zOffset], False))
+        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -5 + xOffset + playerSpeed[0], sinb * 5 + yOffset + playerSpeed[1], cosa * cosb * 5 + zOffset + playerSpeed[2]], False))
     if keys[pygame.K_e]:
         for projectile in projectiles:
-
-            if projectile.onGround == True:
+            if projectile.onGround and projectile.fromPlayer:
                 difference = [playerPos[0] - projectile.pos[0], playerPos[1] - projectile.pos[1], playerPos[2] - projectile.pos[2]]
                 tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
                 distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
@@ -161,6 +166,8 @@ while True:
     if touchground == False:
         playerSpeed[1] -= 0.1
 
+    if shotCooldown != 0:
+        shotCooldown -= 1
 
     oldplayery = playerPos[1]
     playerPos[0] += playerSpeed[0]
