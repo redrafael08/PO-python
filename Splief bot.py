@@ -11,15 +11,16 @@ screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
 
-playerPos = [200, 25, 200]
+playerPos = [10, 25, 10]
 playerSpeed = [0,0,0]
 playerAngle = [0, 0]
 shotCooldown = 0
 
 walkSpeed = 3
 
-botPos = []
+botPos = [200, 25, 200]
 botSpeed = [0,0,0]
+botTouchGround = False
 
 touchground = False
 gridSize = 20
@@ -220,7 +221,11 @@ while True:
         elif projectile.pos[1] < -100:
             projectiles.remove(projectile)
 
+    # Bot spul
 
+    botPos[0] += botSpeed[0]
+    botPos[1] += botSpeed[1]
+    botPos[2] += botSpeed[2]
 
     polygons = []
 
