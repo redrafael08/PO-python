@@ -18,7 +18,7 @@ shotCooldown = 0
 
 walkSpeed = 3
 
-botPos = [200, 25, 200]
+botPos = [200, 20, 200]
 botSpeed = [0,0,0]
 botTouchGround = False
 
@@ -30,6 +30,8 @@ font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
 projectiles = []
+
+botimg = pygame.image.load('popetje 2.png')
 
 
 
@@ -303,6 +305,16 @@ while True:
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
+
+    rbotPos = rotate(botPos)
+    if rbotPos[2] > 10:
+        pbot = project(rbotPos)
+        size = 20/rbotPos[2]*screenDistance, 30/rbotPos[2]*screenDistance
+        pygame.draw.rect(screen, (0,0,0), (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33,size[0],size[1]))
+        botimgscale = pygame.transform.scale(botimg, size)
+      #  screen.blit(botimgscale, (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33))
+
+        
 
     if playerPos[1] < -10:
         exit()
