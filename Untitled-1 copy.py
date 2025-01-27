@@ -120,8 +120,11 @@ while True:
         veldown = -2.5
         playerPos[1] = 21
     if keys[pygame.K_q]:
-        #projectiles.append([playerPos.copy(),[sina,sinb,cosa],0,False])
-        projectiles.append(Projectile(playerPos.copy(), [sina * -5, sinb * 5, cosa * 5], False))
+        randomness = 0.5
+        xOffset = (random.random() - 0.5) * randomness
+        yOffset = (random.random() - 0.5) * randomness
+        zOffset = (random.random() - 0.5) * randomness
+        projectiles.append(Projectile(playerPos.copy(), [sina * -5 + xOffset, sinb * 5 + yOffset, cosa * 5 + zOffset], False))
     if keys[pygame.K_e]:
         for projectile in projectiles:
 
@@ -288,7 +291,8 @@ while True:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
-
+    if playerPos[1] < -10:
+        exit()
 
     pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
     pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
