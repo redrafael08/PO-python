@@ -66,7 +66,11 @@ def project(point):
     projY = -(point[1]) / (point[2]) * screenDistance + screenCenter[1]
     return [projX, projY]
 
-
+class Projectile():
+    def __init__(self, pos, vel, onGround):
+        self.pos = pos
+        self.vel = vel
+        self.onGround = onGround
 
 
 while True:
@@ -116,30 +120,31 @@ while True:
         veldown = -2.5
         playerPos[1] = 21
     if keys[pygame.K_q]:
-        projectiles.append([playerPos.copy(),[sina,sinb,cosa],0,False])
+        #projectiles.append([playerPos.copy(),[sina,sinb,cosa],0,False])
+        projectiles.append(Projectile(playerPos.copy(), [sina * -5, sinb * 5, cosa * 5], False))
     if keys[pygame.K_e]:
         for projectile in projectiles:
 
-            if projectile[3] == True:
-                tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] = 0
-                distance = ((projectile[0][0]-playerPos[0])**2+(projectile[0][1]-playerPos[1])**2+(projectile[0][2]-playerPos[2])**2)**0.5
+            if projectile.onGround == True:
+                tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
+                distance = ((projectile.pos[0]-playerPos[0])**2+(projectile.pos[1]-playerPos[1])**2+(projectile.pos[2]-playerPos[2])**2)**0.5
             # if distance < 20:
 
 
-                if projectile[0][0]-playerPos[0] != 0:
-                    playerSpeed[0] -= 10000/(projectile[0][0]-playerPos[0])
+                if projectile.pos[0]-playerPos[0] != 0:
+                    playerSpeed[0] -= 10000/(projectile.pos[0]-playerPos[0])
                     if playerSpeed[0] > 5:
                         playerSpeed[0] = 5
                     if playerSpeed[0] < -5:
                         playerSpeed[0] = -5
-                if (projectile[0][1]-20)-playerPos[1] != 0:
-                    playerSpeed[1] -= 10000/((projectile[0][1]-20)-playerPos[1])
+                if (projectile.pos[1]-20)-playerPos[1] != 0:
+                    playerSpeed[1] -= 10000/((projectile.pos[1]-20)-playerPos[1])
                     if playerSpeed[1] > 20:
                         playerSpeed[1] = 20
                     if playerSpeed[1] < -20:
                         playerSpeed[1] = -20
-                if projectile[0][2]-playerPos[2] != 0:
-                    playerSpeed[2] -= 10000/(projectile[0][2]-playerPos[2])
+                if projectile.pos[2]-playerPos[2] != 0:
+                    playerSpeed[2] -= 10000/(projectile.pos[2]-playerPos[2])
                     if playerSpeed[2] > 5:
                         playerSpeed[2] = 5
                     if playerSpeed[2] < -5:
@@ -180,29 +185,28 @@ while True:
 
     for projectile in projectiles:
 
-        oldy = projectile[0][1]
-        if projectile[3] == False:
-            projectile[0][0] -= projectile[1][0]*5
-            projectile[0][1] += projectile[1][1]*5-projectile[2]
-            projectile[0][2] += projectile[1][2]*5
-            projectile[2] += 0.1
+        oldy = projectile.pos[1]
+        if projectile.onGround == False:
+            projectile.pos[0] += projectile.vel[0]
+            projectile.pos[1] += projectile.vel[1]
+            projectile.pos[2] += projectile.vel[2]
+            projectile.vel[1] -= 0.1
 
-        if oldy > 2 and 0 < projectile[0][0] < 20*gridSize and 0 < projectile[0][2] < 20*gridSize and projectile[0][1] <= 2 and tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] == 1:
-            projectile[1] = [0,0,0]
-            projectile[0][1] = 2
-            projectile[2] = 0
-            projectile[3] = True
+        if oldy > 2 and 0 < projectile.pos[0] < 20*gridSize and 0 < projectile.pos[2] < 20*gridSize and projectile.pos[1] <= 2 and tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] == 1:
+            projectile.vel = [0,0,0]
+            projectile.pos[1] = 2
+            projectile.onGround = True
 
-        if (projectile[0][1] < 2 and playerPos[1] >= 20) or (projectile[0][1] >= 2 and playerPos[1] < 20):
+        if (projectile.pos[1] < 2 and playerPos[1] >= 20) or (projectile.pos[1] >= 2 and playerPos[1] < 20):
 
-            rprojectile = rotate(projectile[0])
+            rprojectile = rotate(projectile.pos)
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
 
         
-        elif projectile[0][1] < -100:
+        elif projectile.pos[1] < -100:
             projectiles.remove(projectile)
 
 
@@ -277,9 +281,9 @@ while True:
                         pygame.gfxdraw.filled_polygon(screen, polygon, color)
 
     for projectile in projectiles:
-        if (projectile[0][1] >= 2 and playerPos[1] >= 20) or (projectile[0][1] < 2 and playerPos[1] < 20):
+        if (projectile.pos[1] >= 2 and playerPos[1] >= 20) or (projectile.pos[1] < 2 and playerPos[1] < 20):
 
-            rprojectile = rotate(projectile[0])
+            rprojectile = rotate(projectile.pos)
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
