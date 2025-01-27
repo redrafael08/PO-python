@@ -242,7 +242,7 @@ while True:
                             ppoint = project(point)
                             polygon.append(ppoint)
                             cache[tpoint] = ppoint
-                            a +=1
+                            a += 1
 
                         else:
                             point2 = points[points.index(point) - 1]
@@ -289,10 +289,11 @@ while True:
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
 
-    pygame.draw.line(screen, (0,255,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
-    pygame.draw.line(screen, (0,255,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
-    pygame.draw.line(screen, (0,255,0), (screenCenter[0]+15,screenCenter[1]), (screenCenter[0]+5,screenCenter[1]),2)
-    pygame.draw.line(screen, (0,255,0), (screenCenter[0],screenCenter[1]+15), (screenCenter[0],screenCenter[1]+5),2)
+
+    pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
+    pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
+    pygame.draw.line(screen, (0,200,0), (screenCenter[0]+15,screenCenter[1]), (screenCenter[0]+5,screenCenter[1]),2)
+    pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]+15), (screenCenter[0],screenCenter[1]+5),2)
 
 
 
