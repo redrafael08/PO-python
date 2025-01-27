@@ -134,7 +134,7 @@ while True:
         xOffset = (random.random() - 0.5) * randomness
         yOffset = (random.random() - 0.5) * randomness
         zOffset = (random.random() - 0.5) * randomness
-        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -5 + xOffset + playerSpeed[0], sinb * 5 + yOffset + playerSpeed[1], cosa * cosb * 5 + zOffset + playerSpeed[2]], False, True))
+        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -5 + xOffset, sinb * 5 + yOffset, cosa * cosb * 5 + zOffset], False, True))
     if keys[pygame.K_e]:
         for projectile in projectiles:
             if projectile.onGround and projectile.fromPlayer:
