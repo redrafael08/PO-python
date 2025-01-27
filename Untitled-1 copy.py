@@ -13,7 +13,7 @@ screenCenter = (screenWidth / 2, screenHeight / 2)
 
 playerPos = [200, 200, 200]
 playerSpeed = [0,0,0]
-walkSpeed = 0.1*50
+walkSpeed = 3
 playerAngle = [0, 0]
 
 
@@ -104,18 +104,23 @@ while True:
     sina, cosa = math.sin(playerAngle[0]), math.cos(playerAngle[0])
     sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])
 
+    if touchground:
+        walkSpeed = 3
+    else:
+        walkSpeed = 0.1
+
     if keys[pygame.K_a]:
-        playerPos[0] -= walkSpeed * cosa 
-        playerPos[2] -= walkSpeed * sina 
+        playerSpeed[0] -= walkSpeed * cosa 
+        playerSpeed[2] -= walkSpeed * sina 
     if keys[pygame.K_d]:
-        playerPos[0] += walkSpeed * cosa 
-        playerPos[2] += walkSpeed * sina 
+        playerSpeed[0] += walkSpeed * cosa 
+        playerSpeed[2] += walkSpeed * sina 
     if keys[pygame.K_w]:
-        playerPos[0] += walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerPos[2] += walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+        playerSpeed[0] += walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+        playerSpeed[2] += walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
     if keys[pygame.K_s]:
-        playerPos[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerPos[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+        playerSpeed[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+        playerSpeed[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
     if keys[pygame.K_SPACE] and playerPos[1] == 20:
         veldown = -2.5
         playerPos[1] = 21
@@ -133,26 +138,22 @@ while True:
                 tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
                 distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
                 distance = distanceSqrd**0.5
-                '''
                 direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
-                distanceFactor = distanceSqrd * 0.00001
-                movement = [direction[0] / distanceFactor, direction[1] / distanceFactor, direction[2] / distanceFactor]
-                playerSpeed += movement
-                '''
+
                 if difference[0] != 0:
-                    playerSpeed[0] -= 10000/difference[0]
+                    playerSpeed[0] -= direction[0]
                     if playerSpeed[0] > 5:
                         playerSpeed[0] = 5
                     if playerSpeed[0] < -5:
                         playerSpeed[0] = -5
                 if difference[1] - 20 != 0:
-                    playerSpeed[1] -= 10000/(difference[1] - 20)
+                    playerSpeed[1] -= (direction[1] - 20)
                     if playerSpeed[1] > 20:
                         playerSpeed[1] = 20
                     if playerSpeed[1] < -20:
                         playerSpeed[1] = -20
                 if difference[2] != 0:
-                    playerSpeed[2] -= 10000/difference[2]
+                    playerSpeed[2] -= direction[2]
                     if playerSpeed[2] > 5:
                         playerSpeed[2] = 5
                     if playerSpeed[2] < -5:
@@ -176,6 +177,10 @@ while True:
     if touchground == False:
         playerPos[1] -= veldown
         veldown += 0.1
+    else:
+        playerSpeed[0] *= 0.4
+        playerSpeed[1] *= 0.4
+        playerSpeed[2] *= 0.4
 
     
 
