@@ -124,30 +124,35 @@ while True:
         xOffset = (random.random() - 0.5) * randomness
         yOffset = (random.random() - 0.5) * randomness
         zOffset = (random.random() - 0.5) * randomness
-        projectiles.append(Projectile(playerPos.copy(), [sina * -5 + xOffset, sinb * 5 + yOffset, cosa * 5 + zOffset], False))
+        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -5 + xOffset, sinb * 5 + yOffset, cosa * cosb * 5 + zOffset], False))
     if keys[pygame.K_e]:
         for projectile in projectiles:
 
             if projectile.onGround == True:
+                difference = [playerPos[0] - projectile.pos[0], playerPos[1]    - projectile.pos[1], playerPos[2] - projectile.pos[2]]
                 tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
-                distance = ((projectile.pos[0]-playerPos[0])**2+(projectile.pos[1]-playerPos[1])**2+(projectile.pos[2]-playerPos[2])**2)**0.5
-            # if distance < 20:
-
-
-                if projectile.pos[0]-playerPos[0] != 0:
-                    playerSpeed[0] -= 10000/(projectile.pos[0]-playerPos[0])
+                distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
+                distance = distanceSqrd**0.5
+                '''
+                direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
+                distanceFactor = distanceSqrd * 0.00001
+                movement = [direction[0] / distanceFactor, direction[1] / distanceFactor, direction[2] / distanceFactor]
+                playerSpeed += movement
+                '''
+                if difference[0] != 0:
+                    playerSpeed[0] -= 10000/difference[0]
                     if playerSpeed[0] > 5:
                         playerSpeed[0] = 5
                     if playerSpeed[0] < -5:
                         playerSpeed[0] = -5
-                if (projectile.pos[1]-20)-playerPos[1] != 0:
-                    playerSpeed[1] -= 10000/((projectile.pos[1]-20)-playerPos[1])
+                if difference[1] - 20 != 0:
+                    playerSpeed[1] -= 10000/(difference[1] - 20)
                     if playerSpeed[1] > 20:
                         playerSpeed[1] = 20
                     if playerSpeed[1] < -20:
                         playerSpeed[1] = -20
-                if projectile.pos[2]-playerPos[2] != 0:
-                    playerSpeed[2] -= 10000/(projectile.pos[2]-playerPos[2])
+                if difference[2] != 0:
+                    playerSpeed[2] -= 10000/difference[2]
                     if playerSpeed[2] > 5:
                         playerSpeed[2] = 5
                     if playerSpeed[2] < -5:
