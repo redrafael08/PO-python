@@ -138,6 +138,7 @@ while True:
     keys = pygame.key.get_pressed()
 
     mouse = pygame.mouse.get_rel()
+    mouseclick = pygame.mouse.get_pressed()
     playerAngle[0] -= mouse[0]*mouseSensitivity
     playerAngle[1] -= mouse[1]*mouseSensitivity
     pygame.mouse.set_pos(screenCenter)
