@@ -98,6 +98,7 @@ while True:
     keys = pygame.key.get_pressed()
 
     mouse = pygame.mouse.get_rel()
+    mouseclick = pygame.mouse.get_pressed()
     playerAngle[0] -= mouse[0]*mouseSensitivity
     playerAngle[1] -= mouse[1]*mouseSensitivity
     pygame.mouse.set_pos(screenCenter)
@@ -143,7 +144,7 @@ while True:
         touchground = False
 
 
-    if keys[pygame.K_q] and shotCooldown == 0:
+    if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
         shotCooldown = 10
         randomness = 0.5
         xOffset = (random.random() - 0.5) * randomness
@@ -152,7 +153,7 @@ while True:
 
         projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -20 + xOffset + playerSpeed[0], sinb * 20 + yOffset + playerSpeed[1], cosa * cosb * 20 + zOffset + playerSpeed[2]], False))
 
-    if keys[pygame.K_e]:
+    if (keys[pygame.K_e] or mouseclick[2]):
         for projectile in projectiles:
 
             if projectile.onGround == True:

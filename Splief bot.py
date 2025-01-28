@@ -180,12 +180,12 @@ while True:
         player.vel[1] = 2.5
         player.pos[1] = 21
         player.onGround = False
-    if keys[pygame.K_q] and shotCooldown == 0:
+    if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
         shotCooldown = 10
         test1 = [sina * cosb * -5, sinb * 5, cosa * cosb * 5]
         test2 = length(test1)
         projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -projectileSpeed + player.vel[0], sinb * projectileSpeed + player.vel[1], cosa * cosb * projectileSpeed + player.vel[2]], False, True))
-    if keys[pygame.K_e]:
+    if (keys[pygame.K_e] or mouseclick[2]):
         for projectile in projectiles:
             if projectile.onGround and projectile.fromPlayer:
                 player.AddExplosionVel(projectile.pos)
