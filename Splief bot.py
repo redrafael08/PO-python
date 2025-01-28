@@ -399,13 +399,19 @@ while True:
                         color = ((tile[0][0]+tile[0][2])%155+100,0,0)
                         pygame.gfxdraw.filled_polygon(screen, polygon, color)
 
-    rbotPos = rotate(bot.pos)
-    if rbotPos[2] > 10:
-        pbot = project(rbotPos)
-        size = 20/rbotPos[2]*screenDistance, 30/rbotPos[2]*screenDistance
+    rbotPos = [rotate(bot.pos),rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]-5]),rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]+5]),rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]+5]),rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]-5])]
+    if rbotPos[0][2] > 10:
+
+        pbot = [project(rbotPos[0]), project(rbotPos[1]), project(rbotPos[2]), project(rbotPos[3]), project(rbotPos[4])]
+        
+        pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[1], pbot[2]))
+        pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
+        pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
+      #  size = 20/rbotPos[2]*screenDistance, 30/rbotPos[2]*screenDistance
         #pygame.draw.rect(screen, (0,0,0), (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33,size[0],size[1]))
-        botimgscale = pygame.transform.scale(botimg, size)
-        screen.blit(botimgscale, (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33))
+      #  botimgscale = pygame.transform.scale(botimg, size)
+      #  screen.blit(botimgscale, (pbot[0]-size[0]*0.5,pbot[1]-size[1]*0.33))
+
 
     for projectile in projectiles:
         if (projectile.pos[1] >= 2 and player.pos[1] >= 20) or (projectile.pos[1] < 2 and player.pos[1] < 20):
