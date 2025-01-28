@@ -9,6 +9,8 @@ screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
+horizontalVelCap = 10
+verticalVelCap = 10
 
 test1 = 0
 test2 = 0
@@ -30,18 +32,18 @@ class Player():
         self.vel[2] += direction[2] / distance * 10
 
     def CapVel(self):
-        if self.vel[0] > 5:
-            self.vel[0] = 5
-        if self.vel[0] < -5:
-            self.vel[0] = -5
-        if self.vel[1] > 10:
-            self.vel[1] = 10
-        if self.vel[1] < -10:
-            self.vel[1] = -10
-        if self.vel[2] > 5:
-            self.vel[2] = 5
-        if self.vel[2] < -5:
-            self.vel[2] = -5
+        if self.vel[0] > horizontalVelCap:
+            self.vel[0] = horizontalVelCap
+        if self.vel[0] < -horizontalVelCap:
+            self.vel[0] = -horizontalVelCap
+        if self.vel[1] > verticalVelCap:
+            self.vel[1] = verticalVelCap
+        if self.vel[1] < -verticalVelCap:
+            self.vel[1] = -verticalVelCap
+        if self.vel[2] > horizontalVelCap:
+            self.vel[2] = horizontalVelCap
+        if self.vel[2] < -horizontalVelCap:
+            self.vel[2] = -horizontalVelCap
 
 player = Player([10, 25, 10], [0,0,0], False)
 playerAngle = [0, 0]
@@ -51,6 +53,7 @@ walkSpeed = 3
 
 bot = Player([200, 25, 200], [0,0,0], False)
 botcooldown = 60
+botSpeed = 3
 
 gridSize = 20
 tiles = []
@@ -103,10 +106,10 @@ def project(point):
     return [projX, projY]
 
 def abovegrid(position, size):
-    if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1) and position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] - size >= 0:
-        return True
-    else:
-        return False
+    if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] - size >= 0:
+        if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1) and position[0] - size <= gridSize*20:
+            return True
+    return False
 
 class Projectile():
     def __init__(self, pos, vel, onGround, fromPlayer):
@@ -197,7 +200,6 @@ while True:
     player.pos[1] += player.vel[1]
     player.pos[2] += player.vel[2]
 
-
     if player.onGround == False:
         player.vel[0] *= 0.99
         player.vel[2] *= 0.99
@@ -245,6 +247,31 @@ while True:
 
     # Bot spul
 
+    if bot.onGround:
+        botSpeed = 1
+    else:
+        botSpeed = 0.1
+
+    targetPos = bot.pos
+    if not bot.onGround and not abovegrid(bot.pos, 5):
+        minDistance = 100000000
+        for z, row in enumerate(tiles):
+            for x, column in enumerate(row):
+                tilePos = [(x + 0.5) * gridSize, 0, (z + 0.5) * gridSize]
+                relativeDistance = (tilePos[0] - bot.pos[0])**2 + (tilePos[2] - bot.pos[2])**2
+                if relativeDistance < minDistance:
+                    targetPos = tilePos
+                    minDistance = relativeDistance
+
+    if bot.pos[0] < targetPos[0] -5:
+        bot.vel[0] += botSpeed
+    elif bot.pos[0] > targetPos[0] + 5:
+        bot.vel[0] -= botSpeed 
+    if bot.pos[2] < targetPos[2] -5:
+        bot.vel[2] += botSpeed
+    elif bot.pos[2] > targetPos[2] + 5:
+        bot.vel[2] -= botSpeed
+
     oldboty = bot.pos[1]
     bot.pos[0] += bot.vel[0]
     bot.pos[1] += bot.vel[1]
@@ -273,12 +300,11 @@ while True:
         bot.onGround = False
 
     if botcooldown == 0:
-        difference = [player.pos[0] - bot.pos[0], player.pos[1] - bot.pos[1], player.pos[2] - bot.pos[2]] 
+        difference = [player.pos[0] - bot.pos[0], 0, player.pos[2] - bot.pos[2]] 
         distancePlayer = length(difference)
-        direction = [difference[0], difference[1] + 0.7 * distancePlayer - 80, difference[2]]
+        direction = [difference[0], 0.7 * distancePlayer - 70 - bot.pos[1] * 0.4, difference[2]]
         distanceFactor = 5 / length(direction)
         direction = [direction[0] * distanceFactor, direction[1] * distanceFactor, direction[2] * distanceFactor]
-        test1 = direction
 
         projectiles.append(Projectile(bot.pos.copy(), direction + bot.vel, False, False))
         if random.randint(1, 5) == 1:
@@ -398,7 +424,7 @@ while True:
 
 
 
-
+    test1 = [round(player.vel[0], 2), round(player.vel[1], 2), round(player.vel[2], 2)]
 
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
@@ -406,5 +432,5 @@ while True:
     text = font.render(f"{test1}", True, (0, 0, 0))
     screen.blit(text, (100, 200))
     #text = font.render(f"{round(player.vel[0], 2), round(player.vel[1], 2), round(player.vel[2], 2)}", True, (0, 0, 0))
-    screen.blit(text, (100, 300))
+    #screen.blit(text, (100, 300))
     pygame.display.update()
