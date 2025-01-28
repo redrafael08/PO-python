@@ -58,6 +58,8 @@ bot = Player([200, 25, 200], [0,0,0], False)
 botcooldown = 60
 botSpeed = 3
 botShotColor = (200,200,200)
+lastMinDistance = 1000000000
+targetPos = [200, 25, 200]
 
 gridSize = 20
 tiles = []
@@ -110,7 +112,7 @@ def project(point):
     return [projX, projY]
 
 def abovegrid(position, size):
-    if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] - size >= 0:
+    if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] + size >= 0:
         if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1) and position[0] - size <= gridSize*20:
             return True
     return False
@@ -264,16 +266,20 @@ while True:
     else:
         botSpeed = 0.1
 
-    targetPos = bot.pos
     if not bot.onGround and not abovegrid(bot.pos, 5):
-        minDistance = 100000000
+        if abovegrid(targetPos, 0):
+            minDistance = lastMinDistance
+        else:
+            minDistance = 100000000
         for z, row in enumerate(tiles):
             for x, column in enumerate(row):
-                tilePos = [(x + 0.5) * gridSize, 0, (z + 0.5) * gridSize]
-                relativeDistance = (tilePos[0] - bot.pos[0])**2 + (tilePos[2] - bot.pos[2])**2
-                if relativeDistance < minDistance:
-                    targetPos = tilePos
-                    minDistance = relativeDistance
+                if column == 1:
+                    tilePos = [(x + 0.5) * gridSize, 0, (z + 0.5) * gridSize]
+                    relativeDistance = (tilePos[0] - bot.pos[0])**2 + (tilePos[2] - bot.pos[2])**2
+                    if relativeDistance < minDistance:
+                        targetPos = tilePos
+                        minDistance = relativeDistance
+        lastMinDistance = minDistance
 
     if bot.pos[0] < targetPos[0] -5:
         bot.vel[0] += botSpeed
