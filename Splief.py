@@ -93,8 +93,17 @@ while True:
             exit()
 
     currentframe = clock.get_time()
-    mouse = pygame.mouse.get_pos()
+    
     keys = pygame.key.get_pressed()
+
+    mouse = pygame.mouse.get_rel()
+    playerAngle[0] -= mouse[0]*0.01
+    playerAngle[1] -= mouse[1]*0.01
+    pygame.mouse.set_pos(screenCenter)
+
+
+
+
 
 
     if keys[pygame.K_LEFT]:
@@ -338,8 +347,10 @@ while True:
     screen.blit(text, (100, 200))
     text = font.render(f"{round(playerSpeed[0]), round(playerSpeed[1]), round(playerSpeed[2])}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
-    text = font.render(f"{len(projectiles)}", True, (0, 0, 0))
+    text = font.render(f"{playerAngle}", True, (0, 0, 0))
     screen.blit(text, (100, 400))
+    text = font.render(f"{len(projectiles)}", True, (0, 0, 0))
+    screen.blit(text, (100, 500))
     pygame.display.update()
 
 
