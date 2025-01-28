@@ -273,9 +273,12 @@ while True:
         bot.onGround = False
 
     if botcooldown == 0:
-        direction = [player.pos[0] - bot.pos[0], player.pos[1] - bot.pos[1] + 30, player.pos[2] - bot.pos[2]]
-        distance = length(direction)
-        direction = [direction[0] / distance * 5, direction[1] / distance * 5, direction[2] / distance * 5]
+        difference = [player.pos[0] - bot.pos[0], player.pos[1] - bot.pos[1], player.pos[2] - bot.pos[2]] 
+        distancePlayer = length(difference)
+        direction = [difference[0], difference[1] + 0.7 * distancePlayer - 80, difference[2]]
+        distanceFactor = 5 / length(direction)
+        direction = [direction[0] * distanceFactor, direction[1] * distanceFactor, direction[2] * distanceFactor]
+        test1 = direction
 
         projectiles.append(Projectile(bot.pos.copy(), direction + bot.vel, False, False))
         if random.randint(1, 5) == 1:
@@ -400,6 +403,7 @@ while True:
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
     #text = font.render(f"{round(player.pos[0]), round(player.pos[1]), round(player.pos[2])}", True, (0, 0, 0))
+    text = font.render(f"{test1}", True, (0, 0, 0))
     screen.blit(text, (100, 200))
     #text = font.render(f"{round(player.vel[0], 2), round(player.vel[1], 2), round(player.vel[2], 2)}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
