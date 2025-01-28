@@ -48,12 +48,14 @@ class Player():
 player = Player([10, 25, 10], [0,0,0], False)
 playerAngle = [0, 0]
 shotCooldown = 0
+playerShotColor = (0,0,0)
 
 walkSpeed = 3
 
 bot = Player([200, 25, 200], [0,0,0], False)
 botcooldown = 60
 botSpeed = 3
+botShotColor = (200,200,200)
 
 gridSize = 20
 tiles = []
@@ -238,7 +240,10 @@ while True:
             rprojectile = rotate(projectile.pos)
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
+                if projectile.fromPlayer:
+                    pygame.draw.circle(screen, playerShotColor, pprojectile, 2/rprojectile[2]*screenDistance)
+                else: 
+                    pygame.draw.circle(screen, botShotColor, pprojectile, 2/rprojectile[2]*screenDistance)
 
 
         
@@ -408,7 +413,10 @@ while True:
             rprojectile = rotate(projectile.pos)
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
+                if projectile.fromPlayer:
+                    pygame.draw.circle(screen, playerShotColor, pprojectile, 2/rprojectile[2]*screenDistance)
+                else: 
+                    pygame.draw.circle(screen, botShotColor, pprojectile, 2/rprojectile[2]*screenDistance)
 
         
 
