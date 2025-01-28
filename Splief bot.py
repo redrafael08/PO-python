@@ -50,6 +50,7 @@ playerAngle = [0, 0]
 shotCooldown = 0
 playerShotColor = (0,0,0)
 projectileSpeed = 10
+mouseSensitivity = 0.006
 
 walkSpeed = 3
 
@@ -136,6 +137,10 @@ while True:
     currentframe = clock.get_time()
     keys = pygame.key.get_pressed()
 
+    mouse = pygame.mouse.get_rel()
+    playerAngle[0] -= mouse[0]*mouseSensitivity
+    playerAngle[1] -= mouse[1]*mouseSensitivity
+    pygame.mouse.set_pos(screenCenter)
 
     if keys[pygame.K_LEFT]:
         playerAngle[0] += math.radians(5)

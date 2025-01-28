@@ -16,6 +16,7 @@ playerSpeed = [0,0,0]
 walkSpeed = 3
 playerAngle = [0, 0]
 shotCooldown = 0
+mouseSensitivity = 0.006
 
 touchground = False
 gridSize = 20
@@ -97,14 +98,9 @@ while True:
     keys = pygame.key.get_pressed()
 
     mouse = pygame.mouse.get_rel()
-    playerAngle[0] -= mouse[0]*0.01
-    playerAngle[1] -= mouse[1]*0.01
+    playerAngle[0] -= mouse[0]*mouseSensitivity
+    playerAngle[1] -= mouse[1]*mouseSensitivity
     pygame.mouse.set_pos(screenCenter)
-
-
-
-
-
 
     if keys[pygame.K_LEFT]:
         playerAngle[0] += math.radians(5)
