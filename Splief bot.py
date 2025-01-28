@@ -49,6 +49,7 @@ player = Player([10, 25, 10], [0,0,0], False)
 playerAngle = [0, 0]
 shotCooldown = 0
 playerShotColor = (0,0,0)
+projectileSpeed = 10
 
 walkSpeed = 3
 
@@ -178,7 +179,7 @@ while True:
         shotCooldown = 10
         test1 = [sina * cosb * -5, sinb * 5, cosa * cosb * 5]
         test2 = length(test1)
-        projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -5 + player.vel[0], sinb * 5 + player.vel[1], cosa * cosb * 5 + player.vel[2]], False, True))
+        projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -projectileSpeed + player.vel[0], sinb * projectileSpeed + player.vel[1], cosa * cosb * projectileSpeed + player.vel[2]], False, True))
     if keys[pygame.K_e]:
         for projectile in projectiles:
             if projectile.onGround and projectile.fromPlayer:
@@ -307,8 +308,8 @@ while True:
     if botcooldown == 0:
         difference = [player.pos[0] - bot.pos[0], 0, player.pos[2] - bot.pos[2]] 
         distancePlayer = length(difference)
-        direction = [difference[0], 0.7 * distancePlayer - 70 - bot.pos[1] * 0.4, difference[2]]
-        distanceFactor = 5 / length(direction)
+        direction = [difference[0], 0.2 * distancePlayer - 30 - bot.pos[1] * 0.4, difference[2]]
+        distanceFactor = projectileSpeed / length(direction)
         direction = [direction[0] * distanceFactor, direction[1] * distanceFactor, direction[2] * distanceFactor]
 
         projectiles.append(Projectile(bot.pos.copy(), direction + bot.vel, False, False))
