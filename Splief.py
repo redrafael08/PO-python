@@ -29,7 +29,7 @@ projectiles = []
 
 
 veldown = 0
-gravityacc = 0.3
+gravityacc = 0.2
 
 
 
@@ -145,7 +145,7 @@ while True:
 
 
     if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
-        shotCooldown = 10
+        shotCooldown = 5
         randomness = 0.5
         xOffset = (random.random() - 0.5) * randomness
         yOffset = (random.random() - 0.5) * randomness
