@@ -92,7 +92,7 @@ while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
 
-    message = str([playerPos, projectiles])
+    message = str([playerPos, projectiles,tiles])
     message = message.encode()
     s.send(message)
 
@@ -100,7 +100,12 @@ while True:
     data = data.decode('utf-8')
     data = eval(data)
     player2Pos = data[0]
-    projectiles = data[1]
+    #projectiles = data[1]
+
+    for tileoldrow, tilenewnew in zip(tiles, data[2]):
+        for tileold, tilenew in zip(tileoldrow, tilenewnew):
+            tileold *= tilenew
+
 
 
     for event in pygame.event.get():
