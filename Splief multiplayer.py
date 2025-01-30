@@ -13,11 +13,43 @@ screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
+horizontalVelCap = 10
+verticalVelCap = 10
 
+def length(vector):
+    return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
 
-playerPos = [200, 25, 200]
+class Player():
+    def __init__(self, pos, vel, onGround):
+        self.pos = pos
+        self.vel = vel
+        self.onGround = onGround
+    
+    def AddExplosionVel(self, explosionPos):
+        difference = [self.pos[0] - explosionPos[0], self.pos[1] - explosionPos[1], self.pos[2] - explosionPos[2]]
+        distance = length(difference)
+        direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
+
+        self.vel[0] += direction[0] / distance * 10
+        self.vel[1] -= (direction[1] - 5) / distance * 10
+        self.vel[2] += direction[2] / distance * 10
+
+    def CapVel(self):
+        if self.vel[0] > horizontalVelCap:
+            self.vel[0] = horizontalVelCap
+        if self.vel[0] < -horizontalVelCap:
+            self.vel[0] = -horizontalVelCap
+        if self.vel[1] > verticalVelCap:
+            self.vel[1] = verticalVelCap
+        if self.vel[1] < -verticalVelCap:
+            self.vel[1] = -verticalVelCap
+        if self.vel[2] > horizontalVelCap:
+            self.vel[2] = horizontalVelCap
+        if self.vel[2] < -horizontalVelCap:
+            self.vel[2] = -horizontalVelCap
+
+player = Player([200, 25, 200], [0,0,0], False)
 player2Pos = [0,25,0]
-playerSpeed = [0,0,0]
 walkSpeed = 3
 playerAngle = [0, 0]
 shotCooldown = 0
@@ -25,7 +57,6 @@ mouseSensitivity = 0.006
 
 
 
-touchground = False
 gridSize = 20
 tiles = []
 clock = pygame.time.Clock()
@@ -33,6 +64,7 @@ font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
 projectiles = []
+explosions = []
 projectiles1 = []
 projectiles2 = []
 
@@ -63,7 +95,7 @@ def line_intersection(point1, point2):
 
 
 def rotate(point):
-    dx, dy, dz = point[0] - playerPos[0], point[1] - playerPos[1], point[2] - playerPos[2]
+    dx, dy, dz = point[0] - player.pos[0], point[1] - player.pos[1], point[2] - player.pos[2]
     xr = dz * sina + dx * cosa
     zr = dz * cosa - dx * sina
     yr = dy
@@ -92,7 +124,7 @@ while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
 
-    message = str([playerPos, projectiles,tiles])
+    message = str([player.pos, projectiles, thisExplosions])
     message = message.encode()
     s.send(message)
 
@@ -101,12 +133,7 @@ while True:
     data = eval(data)
     player2Pos = data[0]
     #projectiles = data[1]
-
-    for tileoldrow, tilenewnew in zip(tiles, data[2]):
-        for tileold, tilenew in zip(tileoldrow, tilenewnew):
-            tileold *= tilenew
-
-
+    explosions = data[2]
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -140,28 +167,28 @@ while True:
     sina, cosa = math.sin(playerAngle[0]), math.cos(playerAngle[0])
     sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])    
 
-    if touchground:
+    if player.onGround:
         walkSpeed = 3
     else:
         walkSpeed = 0.3
 
     if keys[pygame.K_a]:
-        playerSpeed[0] -= walkSpeed * cosa 
-        playerSpeed[2] -= walkSpeed * sina 
+        player.vel[0] -= walkSpeed * cosa 
+        player.vel[2] -= walkSpeed * sina 
     if keys[pygame.K_d]:
-        playerSpeed[0] += walkSpeed * cosa 
-        playerSpeed[2] += walkSpeed * sina 
+        player.vel[0] += walkSpeed * cosa 
+        player.vel[2] += walkSpeed * sina 
     if keys[pygame.K_w]:
-        playerSpeed[0] += walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerSpeed[2] += walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+        player.vel[0] += walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+        player.vel[2] += walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
     if keys[pygame.K_s]:
-        playerSpeed[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerSpeed[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+        player.vel[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+        player.vel[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
 
-    if keys[pygame.K_SPACE] and touchground:
-        playerSpeed[1] += 5
-        playerPos[1] = 21
-        touchground = False
+    if keys[pygame.K_SPACE] and player.onGround:
+        player.vel[1] += 5
+        player.pos[1] = 21
+        player.onGround = False
 
 
     if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
@@ -171,73 +198,58 @@ while True:
         yOffset = (random.random() - 0.5) * randomness
         zOffset = (random.random() - 0.5) * randomness
 
-        projectiles.append([playerPos.copy(), [sina * cosb * -20 + xOffset + playerSpeed[0], sinb * 20 + yOffset + playerSpeed[1], cosa * cosb * 20 + zOffset + playerSpeed[2]], False])
+        projectiles.append([player.pos.copy(), [sina * cosb * -20 + xOffset + player.vel[0], sinb * 20 + yOffset + player.vel[1], cosa * cosb * 20 + zOffset + player.vel[2]], False])
 
     if (keys[pygame.K_e] or mouseclick[2]):
+        thisExplosions = []
         for projectile in projectiles:
-
             if projectile[2] == True:
-                difference = [playerPos[0] - projectile[0][0], playerPos[1] - projectile[0][1], playerPos[2] - projectile[0][2]]
-                tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] = 0
-                distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
-                distance = distanceSqrd**0.5
-                direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
-
-                playerSpeed[0] += direction[0] / distance * 10
-                playerSpeed[1] -= (direction[1] - 5) / distance * 10
-                playerSpeed[2] += direction[2] / distance * 10
-                
-                if playerSpeed[0] > 5:
-                    playerSpeed[0] = 5
-                if playerSpeed[0] < -5:
-                    playerSpeed[0] = -5
-                if playerSpeed[1] > 20:
-                    playerSpeed[1] = 20
-                if playerSpeed[1] < -20:
-                    playerSpeed[1] = -20
-                if playerSpeed[2] > 5:
-                    playerSpeed[2] = 5
-                if playerSpeed[2] < -5:
-                    playerSpeed[2] = -5
+                explosions.append(projectile[0])
+                thisExplosions.append(projectile[0])
 
                 projectiles.remove(projectile)
+    
+    for explosion in explosions:
+        tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] = 0
+        player.AddExplosionVel(explosion)
+        player.CapVel()
 
-    if touchground == False:
-        playerSpeed[1] -= 0.1
+    if player.onGround == False:
+        player.vel[1] -= 0.1
 
     if shotCooldown != 0:
         shotCooldown -= 1
 
-    oldplayery = playerPos[1]
-    playerPos[0] += playerSpeed[0]
-    playerPos[1] += playerSpeed[1]
-    playerPos[2] += playerSpeed[2]
+    oldplayery = player.pos[1]
+    player.pos[0] += player.vel[0]
+    player.pos[1] += player.vel[1]
+    player.pos[2] += player.vel[2]
 
 
-    playerSpeed[0] *= 0.9
-    playerSpeed[1] *= 0.98
-    playerSpeed[2] *= 0.9
+    player.vel[0] *= 0.9
+    player.vel[1] *= 0.98
+    player.vel[2] *= 0.9
 
 
-    if touchground == False:
-        playerSpeed[1] -= gravityacc
+    if player.onGround == False:
+        player.vel[1] -= gravityacc
 
     else:
-        playerSpeed[0] *= 0.4
-        playerSpeed[2] *= 0.4
-        if playerSpeed[0] < 0.001 and playerSpeed[0] > -0.001:
-            playerSpeed[0] = 0
-        if playerSpeed[2] < 0.001 and playerSpeed[0] > -0.001:
-            playerSpeed[2] = 0
+        player.vel[0] *= 0.4
+        player.vel[2] *= 0.4
+        if player.vel[0] < 0.001 and player.vel[0] > -0.001:
+            player.vel[0] = 0
+        if player.vel[2] < 0.001 and player.vel[0] > -0.001:
+            player.vel[2] = 0
 
-    if playerPos[1] <= 20 and abovegrid(playerPos, 5):
+    if player.pos[1] <= 20 and abovegrid(player.pos, 5):
         if oldplayery > 20:
-            playerPos[1] = 20
-            playerSpeed = [0,0,0]
-            playerSpeed[1] = 0
-            touchground = True
+            player.pos[1] = 20
+            player.vel = [0,0,0]
+            player.vel[1] = 0
+            player.onGround = True
     else:
-        touchground = False
+        player.onGround = False
 
     for projectile in projectiles:
 
@@ -253,7 +265,7 @@ while True:
             projectile[0][1] = 2
             projectile[2] = True
 
-        if (projectile[0][1] < 2 and playerPos[1] >= 20) or (projectile[0][1] >= 2 and playerPos[1] < 20):
+        if (projectile[0][1] < 2 and player.pos[1] >= 20) or (projectile[0][1] >= 2 and player.pos[1] < 20):
 
             rprojectile = rotate(projectile[0])
             if rprojectile[2] > 10:
@@ -346,14 +358,14 @@ while True:
         pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
 
     for projectile in projectiles:
-        if (projectile[0][1] >= 2 and playerPos[1] >= 20) or (projectile[0][1] < 2 and playerPos[1] < 20):
+        if (projectile[0][1] >= 2 and player.pos[1] >= 20) or (projectile[0][1] < 2 and player.pos[1] < 20):
 
             rprojectile = rotate(projectile[0])
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
-    if playerPos[1] < -10:
+    if player.pos[1] < -10:
         exit()
 
     pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
@@ -369,9 +381,9 @@ while True:
 
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
-    text = font.render(f"{round(playerPos[0]), round(playerPos[1]), round(playerPos[2])}", True, (0, 0, 0))
+    text = font.render(f"{round(player.pos[0]), round(player.pos[1]), round(player.pos[2])}", True, (0, 0, 0))
     screen.blit(text, (100, 200))
-    text = font.render(f"{round(playerSpeed[0]), round(playerSpeed[1]), round(playerSpeed[2])}", True, (0, 0, 0))
+    text = font.render(f"{round(player.vel[0]), round(player.vel[1]), round(player.vel[2])}", True, (0, 0, 0))
     screen.blit(text, (100, 300))
     text = font.render(f"{playerAngle}", True, (0, 0, 0))
     screen.blit(text, (100, 400))
