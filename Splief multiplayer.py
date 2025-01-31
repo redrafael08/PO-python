@@ -26,7 +26,7 @@ class Player():
         self.onGround = onGround
     
     def AddExplosionVel(self, explosionPos):
-        difference = [self.pos[0] - explosionPos[0], self.pos[1] - explosionPos[1], self.pos[2] - explosionPos[2]]
+        difference = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
         distance = length(difference)
         direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
 
@@ -207,13 +207,14 @@ while True:
         thisExplosions = []
         for projectile in projectiles:
             if projectile[2] == True:
-                explosions.append(projectile[0])
-                thisExplosions.append(projectile[0])
+                explosionPos = [projectile[0][0], projectile[0][2]]
+                explosions.append(explosionPos)
+                thisExplosions.append(explosionPos)
 
                 projectiles.remove(projectile)
     
     for explosion in explosions:
-        tiles[int(explosion[2]/gridSize)][int(explosion[0]/gridSize)] = 0
+        tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
         player.AddExplosionVel(explosion)
         player.CapVel()
 
