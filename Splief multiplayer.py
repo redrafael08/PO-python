@@ -122,12 +122,14 @@ def abovegrid(position, size):
 while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
+    projectilesPos.clear()
     for projectile in projectiles:
-        projectilesPos.append(projectile[0])
+     #   print(projectile)
+        projectilesPos.append([round(projectile[0][0]),0,round(projectile[0][2])])
 
     message = str([player.pos, projectilesPos, thisExplosions])
     message = message.encode()
-    s.send(message)
+    s.sendall(message)
 
     data = s.recv(4096)
     data = data.decode('utf-8')
@@ -135,6 +137,7 @@ while True:
     player2Pos = data[0]
     enemyProjectiles = data[1]
     explosions = data[2]
+    thisExplosions.clear()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
