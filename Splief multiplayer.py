@@ -54,6 +54,8 @@ walkSpeed = 3
 playerAngle = [0, 0]
 shotCooldown = 0
 mouseSensitivity = 0.006
+lives = 5
+enemyLives = 5
 
 
 
@@ -76,11 +78,7 @@ gravityacc = 0.2
 for z in range(20):
     row = []
     for x in range(20):
-        if (x+z)%1 == 0:
-            row.append(1)
-        else:
-            row.append(0)
-
+        row.append(1)
     tiles.append(row)
 
 
@@ -116,7 +114,15 @@ def abovegrid(position, size):
             return True
     return False
 
-
+def ResetWorld():
+    global lives
+    for z in range(20):
+        for x in range(20):
+            tiles[z][x] = 1
+    player.pos = [200, 25, 200]
+    player.vel = [0,0,0]
+    player.onGround = False
+    projectiles.clear()
 
 
 while True:
@@ -126,7 +132,7 @@ while True:
     for projectile in projectiles:
         projectilesPos.append([round(projectile[0][0]),round(projectile[0][1]),round(projectile[0][2])])
 
-    message = str([player.pos, projectilesPos, thisExplosions])
+    message = str([player.pos, projectilesPos, thisExplosions, lives])
     message = message.encode()
     s.sendall(message)
 
@@ -136,6 +142,10 @@ while True:
     player2Pos = data[0]
     enemyProjectiles = data[1]
     explosions = data[2]
+    if data[3] < enemyLives:
+        ResetWorld()
+        enemyLives = data[3]
+        
     thisExplosions.clear()
 
     for event in pygame.event.get():
@@ -214,7 +224,8 @@ while True:
                 projectiles.remove(projectile)
     
     for explosion in explosions:
-        tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
+        if abovegrid([explosion[0], 0, explosion[1]], 0):
+            tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
         player.AddExplosionVel(explosion)
         player.CapVel()
 
@@ -378,7 +389,8 @@ while True:
                 pygame.draw.circle(screen, (255,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
     if player.pos[1] < -10:
-        exit()
+        ResetWorld()
+        lives -= 1
 
     pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
     pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
