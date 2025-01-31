@@ -124,8 +124,7 @@ while True:
     screen.fill((174, 255, 255))
     projectilesPos.clear()
     for projectile in projectiles:
-     #   print(projectile)
-        projectilesPos.append([round(projectile[0][0]),0,round(projectile[0][2])])
+        projectilesPos.append([round(projectile[0][0]),round(projectile[0][1]),round(projectile[0][2])])
 
     message = str([player.pos, projectilesPos, thisExplosions])
     message = message.encode()
