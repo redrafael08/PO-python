@@ -402,7 +402,7 @@ while True:
 
 
 
-
+    '''
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
     text = font.render(f"{round(player.pos[0]), round(player.pos[1]), round(player.pos[2])}", True, (0, 0, 0))
@@ -413,6 +413,7 @@ while True:
     screen.blit(text, (100, 400))
     text = font.render(f"{len(projectiles)}", True, (0, 0, 0))
     screen.blit(text, (100, 500))
+    '''
     pygame.display.update()
 
 

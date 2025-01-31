@@ -5,6 +5,11 @@ import random
 import pygame.gfxdraw
 
 pygame.init()
+pygame.mixer.init()
+
+shootsound = pygame.mixer.Sound('laserShoot.wav')
+explodesound = pygame.mixer.Sound('explosion (1).wav')
+jumpsound = pygame.mixer.Sound('jump (2).wav')
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
@@ -30,6 +35,8 @@ projectiles = []
 
 veldown = 0
 gravityacc = 0.2
+
+
 
 
 
@@ -139,12 +146,17 @@ while True:
         playerSpeed[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
 
     if keys[pygame.K_SPACE] and touchground:
+        
+        pygame.mixer.Sound.play(jumpsound)
         playerSpeed[1] += 5
         playerPos[1] = 21
         touchground = False
 
-
+    
     if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
+
+        pygame.mixer.Sound.play(shootsound)
+
         shotCooldown = 5
         randomness = 0.5
         xOffset = (random.random() - 0.5) * randomness
@@ -154,9 +166,12 @@ while True:
         projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -20 + xOffset + playerSpeed[0], sinb * 20 + yOffset + playerSpeed[1], cosa * cosb * 20 + zOffset + playerSpeed[2]], False))
 
     if (keys[pygame.K_e] or mouseclick[2]):
+        
+        
         for projectile in projectiles:
-
+            
             if projectile.onGround == True:
+                pygame.mixer.Sound.play(explodesound)
                 difference = [playerPos[0] - projectile.pos[0], playerPos[1] - projectile.pos[1], playerPos[2] - projectile.pos[2]]
                 tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
                 distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
@@ -337,7 +352,7 @@ while True:
 
 
 
-
+    '''
     text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
     screen.blit(text, (100, 100))
     text = font.render(f"{round(playerPos[0]), round(playerPos[1]), round(playerPos[2])}", True, (0, 0, 0))
@@ -348,6 +363,12 @@ while True:
     screen.blit(text, (100, 400))
     text = font.render(f"{len(projectiles)}", True, (0, 0, 0))
     screen.blit(text, (100, 500))
+    '''
+    pygame.draw.rect(screen, (0,200,0), (10,10,280,150), 2)
+    text = font.render(f"player 1 lives: {1}", True, (0, 200, 0))
+    screen.blit(text, (20, 20))
+    text = font.render(f"player 2 lives: {1}", True, (0, 200, 0))
+    screen.blit(text, (20, 100))
     pygame.display.update()
 
 
