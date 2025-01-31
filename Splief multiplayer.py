@@ -65,8 +65,7 @@ pygame.mouse.set_visible(False)
 
 projectiles = []
 thisExplosions = []
-projectiles1 = []
-projectiles2 = []
+projectilesPos = []
 
 
 veldown = 0
@@ -123,7 +122,10 @@ def abovegrid(position, size):
 while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
-    message = str([player.pos, projectiles, thisExplosions])
+    for projectile in projectiles:
+        projectilesPos.append(projectile[0])
+
+    message = str([player.pos, projectilesPos, thisExplosions])
     message = message.encode()
     s.send(message)
 
@@ -356,18 +358,18 @@ while True:
         pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
         pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
 
-    for projectile in projectiles:
-        if (projectile[0][1] >= 2 and player.pos[1] >= 20) or (projectile[0][1] < 2 and player.pos[1] < 20):
+    for projectile in projectilesPos:
+        if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
-            rprojectile = rotate(projectile[0])
+            rprojectile = rotate(projectile)
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
     
     for projectile in enemyProjectiles:
-        if (projectile[0][1] >= 2 and player.pos[1] >= 20) or (projectile[0][1] < 2 and player.pos[1] < 20):
+        if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
-            rprojectile = rotate(projectile[0])
+            rprojectile = rotate(projectile)
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (255,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
