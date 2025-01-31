@@ -123,18 +123,15 @@ def abovegrid(position, size):
 while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
-    if len(thisExplosions) > 0:
-        print(thisExplosions)
     message = str([player.pos, projectiles, thisExplosions])
     message = message.encode()
     s.send(message)
 
     data = s.recv(4096)
     data = data.decode('utf-8')
-    print(data)
     data = eval(data)
     player2Pos = data[0]
-    #projectiles = data[1]
+    enemyProjectiles = data[1]
     explosions = data[2]
 
     for event in pygame.event.get():
