@@ -363,6 +363,14 @@ while True:
             if rprojectile[2] > 10:
                 pprojectile = project(rprojectile)
                 pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
+    
+    for projectile in enemyProjectiles:
+        if (projectile[0][1] >= 2 and player.pos[1] >= 20) or (projectile[0][1] < 2 and player.pos[1] < 20):
+
+            rprojectile = rotate(projectile[0])
+            if rprojectile[2] > 10:
+                pprojectile = project(rprojectile)
+                pygame.draw.circle(screen, (255,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
 
     if player.pos[1] < -10:
         exit()
