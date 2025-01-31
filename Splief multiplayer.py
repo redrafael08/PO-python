@@ -6,7 +6,7 @@ import pygame.gfxdraw
 import socket
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("192.168.1.101", 5555))
+s.connect(("172.16.193.143", 5555))
 
 pygame.init()
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
@@ -64,7 +64,7 @@ font = pygame.font.Font(None, 50)
 pygame.mouse.set_visible(False)
 
 projectiles = []
-explosions = []
+thisExplosions = []
 projectiles1 = []
 projectiles2 = []
 
@@ -123,13 +123,15 @@ def abovegrid(position, size):
 while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
-
+    if len(thisExplosions) > 0:
+        print(thisExplosions)
     message = str([player.pos, projectiles, thisExplosions])
     message = message.encode()
     s.send(message)
 
     data = s.recv(4096)
     data = data.decode('utf-8')
+    print(data)
     data = eval(data)
     player2Pos = data[0]
     #projectiles = data[1]
@@ -210,7 +212,7 @@ while True:
                 projectiles.remove(projectile)
     
     for explosion in explosions:
-        tiles[int(projectile[0][2]/gridSize)][int(projectile[0][0]/gridSize)] = 0
+        tiles[int(explosion[2]/gridSize)][int(explosion[0]/gridSize)] = 0
         player.AddExplosionVel(explosion)
         player.CapVel()
 
