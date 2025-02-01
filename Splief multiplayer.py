@@ -5,8 +5,10 @@ import random
 import pygame.gfxdraw
 import socket
 
+ip = socket.gethostbyname(hostname) 
+print(ip)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("172.16.193.143", 5555))
+s.connect((input('give ip addres of the server: '), 5555))
 
 pygame.init()
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
