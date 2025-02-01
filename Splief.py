@@ -5,11 +5,12 @@ import random
 import pygame.gfxdraw
 
 pygame.init()
-pygame.mixer.init()
+
 
 shootsound = pygame.mixer.Sound('laserShoot.wav')
 explodesound = pygame.mixer.Sound('explosion (1).wav')
 jumpsound = pygame.mixer.Sound('jump (2).wav')
+
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
@@ -89,6 +90,7 @@ class Projectile():
         self.vel = vel
         self.onGround = onGround
 
+    
 
 while True:
     clock.tick(30)
@@ -99,6 +101,10 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+
+    if not pygame.mixer.music.get_busy():
+        pygame.mixer.music.load(f'song ({random.randint(1,7)}).wav')
+        pygame.mixer.music.play()
 
     currentframe = clock.get_time()
     
