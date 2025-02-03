@@ -13,6 +13,13 @@ print(ip)
 s.connect((input('give ip addres of the server: '), 5555))
 
 pygame.init()
+
+shootsound = pygame.mixer.Sound('laserShoot.wav')
+explodesound = pygame.mixer.Sound('explosion.wav')
+jumpsound = pygame.mixer.Sound('jump.wav')
+enemyshootsound = pygame.mixer.Sound('laserShoot.wav')
+enemyjumpsound = pygame.mixer.Sound('jump.wav')
+
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
@@ -23,6 +30,9 @@ verticalVelCap = 10
 def length(vector):
     return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
 
+def difference(vector1, vector2):
+    return [vector1[0] - vector2[0], vector1[1] - vector2[1], vector1[2] - vector2[2]]
+
 class Player():
     def __init__(self, pos, vel, onGround):
         self.pos = pos
@@ -30,8 +40,8 @@ class Player():
         self.onGround = onGround
     
     def AddExplosionVel(self, explosionPos):
-        difference = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
-        distance = length(difference)
+        relativePos = difference(self.pos, explosionPos)
+        distance = length(relativePos)
         direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
 
         self.vel[0] += direction[0] / distance * 10
@@ -60,8 +70,8 @@ shotCooldown = 0
 mouseSensitivity = 0.006
 lives = 5
 enemyLives = 5
-
-
+hasShot = False
+hasJumped = False
 
 gridSize = 20
 tiles = []
@@ -136,7 +146,7 @@ while True:
     for projectile in projectiles:
         projectilesPos.append([round(projectile[0][0]),round(projectile[0][1]),round(projectile[0][2])])
 
-    message = str([player.pos, projectilesPos, thisExplosions, lives])
+    message = str([player.pos, projectilesPos, thisExplosions, lives, hasShot, hasJumped])
     message = message.encode()
     s.sendall(message)
 
@@ -149,8 +159,11 @@ while True:
     if data[3] < enemyLives:
         ResetWorld()
         enemyLives = data[3]
+    enemyShot = data[4]
+    enemyJumped = data[5]
         
     thisExplosions.clear()
+    hasShot = False
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -206,7 +219,7 @@ while True:
         player.vel[1] += 5
         player.pos[1] = 21
         player.onGround = False
-
+        pygame.mixer.Sound.play(jumpsound)
 
     if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
         shotCooldown = 5
@@ -216,7 +229,8 @@ while True:
         zOffset = (random.random() - 0.5) * randomness
 
         projectiles.append([player.pos.copy(), [sina * cosb * -20 + xOffset + player.vel[0], sinb * 20 + yOffset + player.vel[1], cosa * cosb * 20 + zOffset + player.vel[2]], False])
-
+        pygame.mixer.Sound.play(shootsound)
+        hasShot = True
     if (keys[pygame.K_e] or mouseclick[2]):
         thisExplosions = []
         for projectile in projectiles:
@@ -229,9 +243,19 @@ while True:
     
     for explosion in explosions:
         if abovegrid([explosion[0], 0, explosion[1]], 0):
+            pygame.mixer.Sound.play(explodesound)
             tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
         player.AddExplosionVel(explosion)
         player.CapVel()
+
+    enemyDistance = length(difference(player.pos, player2Pos))
+    volume = 1 / (1 + enemyDistance)
+    enemyshootsound.set_volume(volume)
+    enemyjumpsound.set_volume(volume)
+    if enemyShot:
+        pygame.mixer.Sound.play(enemyshootsound)
+    if enemyJumped:
+        pygame.mixer.Sound.play(enemyjumpsound)
 
     if player.onGround == False:
         player.vel[1] -= 0.1
