@@ -3,9 +3,12 @@ import socket
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(("192.168.1.25", 5555))
+s.bind((socket.gethostbyname(socket.gethostname()), 5555))
+
 
 s.listen(2) # maximale aantal clienten
+
+print('server created')
 
 
 client, addr = s.accept()
