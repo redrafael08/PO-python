@@ -8,8 +8,8 @@ pygame.init()
 
 
 shootsound = pygame.mixer.Sound('laserShoot.wav')
-explodesound = pygame.mixer.Sound('explosion (1).wav')
-jumpsound = pygame.mixer.Sound('jump (2).wav')
+explodesound = pygame.mixer.Sound('explosion.wav')
+jumpsound = pygame.mixer.Sound('jump.wav')
 
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
