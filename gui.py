@@ -23,9 +23,24 @@ def Button(pos,size,text,command):
     text = font.render(f"{text}", True, (0, 200, 0))
     screen.blit(text, (pos[0]-text.get_width()/2, pos[1]-text.get_height()/2))
 
+def difpage(newpage):
+    global currentbuttons
+    currentbuttons = newpage
+
 
 
 buttons = []
+
+mainbuttons = [
+    lambda: Button([screenCenter[0],screenCenter[1]],[500,100], 'Singleplayer',lambda: print('he')),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],[500,100], 'Multiplayer',lambda: difpage(multiplayerbuttons)),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],[500,100], 'Quit', lambda: exit())
+]
+
+multiplayerbuttons = []
+joinbuttons = []
+
+currentbuttons = mainbuttons
 
 clock = pygame.time.Clock()
 while True:
@@ -46,12 +61,11 @@ while True:
 
    
 
-
     screen.blit(bg, (0,0))
+    for button in currentbuttons:
+        button()
 
-    Button([screenCenter[0],screenCenter[1]],[500,100], 'Singleplayer',lambda: print('he'))
-    Button([screenCenter[0],screenCenter[1]+150],[500,100], 'Multiplayer',lambda: print('a'))
-    Button([screenCenter[0],screenCenter[1]+300],[500,100], 'Quit', lambda: exit())
+
 
 
 
