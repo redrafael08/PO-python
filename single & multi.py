@@ -6,7 +6,9 @@ import subprocess
 import pygame.gfxdraw
 import socket
 
-
+# -------------------------------------
+#             Home screen
+# -------------------------------------
 
 pygame.init()
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
@@ -34,11 +36,6 @@ def server():
     global running
     subprocess.Popen(["python", "server.py"])
     running = False
-
-
-
-
-
 
 mainbuttons = [
     lambda: Button([screenCenter[0],screenCenter[1]],[500,100], 'Singleplayer',lambda: subprocess.Popen(["python", "Splief bot.py"])),
@@ -87,6 +84,11 @@ while running:
 
     pygame.display.update()
 
+
+# -------------------------------------
+#                 Game
+# -------------------------------------
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ip = socket.gethostbyname(socket.gethostname()) 
 print(ip)
@@ -122,7 +124,7 @@ class Player():
     def AddExplosionVel(self, explosionPos):
         relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
         distance = length(relativePos)
-        direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
+        direction = [relativePos[0] / distance, relativePos[1] / distance, relativePos[2] / distance]
 
         self.vel[0] += direction[0] / distance * 10
         self.vel[1] -= (direction[1] - 5) / distance * 10
