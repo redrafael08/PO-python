@@ -14,6 +14,7 @@ pygame.init()
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
+singleplayer = False
 
 bg = pygame.image.load('background.png')
 
@@ -29,8 +30,8 @@ def Button(pos,size,text,command):
     screen.blit(text, (pos[0]-text.get_width()/2, pos[1]-text.get_height()/2))
 
 def difpage(newpage):
-    global currentbuttons
-    currentbuttons = newpage
+    global currentButtons
+    currentButtons = newpage
 
 def server():
     global running
@@ -54,7 +55,7 @@ joinbuttons = [
     lambda: Button([screenCenter[0],screenCenter[1]+300],[500,100], 'Back', lambda: difpage(mainbuttons))  
 ]
 
-currentbuttons = mainbuttons
+currentButtons = mainbuttons
 
 clock = pygame.time.Clock()
 running = True
@@ -78,7 +79,7 @@ while running:
 
     screen.blit(bg, (0,0))
     buttons = []
-    for button in currentbuttons:
+    for button in currentButtons:
         button()
 
 
@@ -96,11 +97,11 @@ s.connect((input('give ip addres of the server: '), 5555))
 
 pygame.init()
 
-shootsound = pygame.mixer.Sound('laserShoot.wav')
+shootSound = pygame.mixer.Sound('laserShoot.wav')
 explodesound = pygame.mixer.Sound('explosion.wav')
-jumpsound = pygame.mixer.Sound('jump.wav')
-enemyshootsound = pygame.mixer.Sound('laserShoot.wav')
-enemyjumpsound = pygame.mixer.Sound('jump.wav')
+jumpSound = pygame.mixer.Sound('jump.wav')
+player2ShootSound = pygame.mixer.Sound('laserShoot.wav')
+player2JumpSound = pygame.mixer.Sound('jump.wav')
 
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
@@ -109,10 +110,10 @@ screenCenter = (screenWidth / 2, screenHeight / 2)
 horizontalVelCap = 10
 verticalVelCap = 10
 
-def length(vector):
+def Length(vector):
     return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
 
-def difference(vector1, vector2):
+def Difference(vector1, vector2):
     return [vector1[0] - vector2[0], vector1[1] - vector2[1], vector1[2] - vector2[2]]
 
 class Player():
@@ -123,7 +124,7 @@ class Player():
     
     def AddExplosionVel(self, explosionPos):
         relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
-        distance = length(relativePos)
+        distance = Length(relativePos)
         direction = [relativePos[0] / distance, relativePos[1] / distance, relativePos[2] / distance]
 
         self.vel[0] += direction[0] / distance * 10
@@ -144,6 +145,14 @@ class Player():
         if self.vel[2] < -horizontalVelCap:
             self.vel[2] = -horizontalVelCap
 
+class Projectile():
+    def __init__(self, pos, vel, onGround, fromPlayer):
+        self.pos = pos
+        randomness = 0.5
+        self.vel = [vel[0] + (random.random() - 0.5) * randomness, vel[1] + (random.random() - 0.5) * randomness, vel[2] + (random.random() - 0.5) * randomness]
+        self.onGround = onGround
+        self.fromPlayer = fromPlayer
+
 player = Player([200, 25, 200], [0,0,0], False)
 player2Pos = [0,25,0]
 walkSpeed = 3
@@ -151,9 +160,10 @@ playerAngle = [0, 0]
 shotCooldown = 0
 mouseSensitivity = 0.006
 lives = 5
-enemyLives = 5
+player2Lives = 5
 hasShot = False
 hasJumped = False
+projectileSpeed = 20
 
 gridSize = 20
 tiles = []
@@ -167,7 +177,7 @@ projectilesPos = []
 
 
 veldown = 0
-gravityacc = 0.2
+gravity = 0.2
 
 
 
@@ -178,16 +188,15 @@ for z in range(20):
     tiles.append(row)
 
 
+# Render functions
 
-
-def line_intersection(point1, point2):
+def LineIntersection(point1, point2):
     t = (10 - point1[2]) / (point2[2] - point1[2])
     x = point1[0] + t * (point2[0] - point1[0])
     y = point1[1] + t * (point2[1] - point1[1])
     return [x, y, 10]
 
-
-def rotate(point):
+def Rotate(point):
     dx, dy, dz = point[0] - player.pos[0], point[1] - player.pos[1], point[2] - player.pos[2]
     xr = dz * sina + dx * cosa
     zr = dz * cosa - dx * sina
@@ -197,14 +206,14 @@ def rotate(point):
     z = zr * cosb + yr * sinb
     return [x, y, z]
 
-
-def project(point):
+def Project(point):
 
     projX = (point[0]) / (point[2]) * screenDistance + screenCenter[0]
     projY = -(point[1]) / (point[2]) * screenDistance + screenCenter[1]
     return [projX, projY]
 
-def abovegrid(position, size):
+
+def AboveGrid(position, size):
     if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] + size >= 0:
         if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
             return True
@@ -224,40 +233,41 @@ def ResetWorld():
 while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
-    projectilesPos.clear()
-    for projectile in projectiles:
-        projectilesPos.append([round(projectile[0][0]),round(projectile[0][1]),round(projectile[0][2])])
+    
+    if not singleplayer:
+        projectilesPos.clear()
+        for projectile in projectiles:
+            projectilesPos.append([round(projectile.pos[0]),round(projectile.pos[1]),round(projectile.pos[2])])
 
-    message = str([player.pos, projectilesPos, thisExplosions, lives, hasShot, hasJumped])
-    message = message.encode()
-    s.sendall(message)
+        message = str([player.pos, projectilesPos, thisExplosions, lives, hasShot, hasJumped])
+        message = message.encode()
+        s.sendall(message)
 
-    data = s.recv(4096)
-    data = data.decode('utf-8')
-    data = eval(data)
-    player2Pos = data[0]
-    enemyProjectiles = data[1]
-    explosions = data[2]
-    if data[3] < enemyLives:
-        ResetWorld()
-        enemyLives = data[3]
-    enemyShot = data[4]
-    enemyJumped = data[5]
-        
-    thisExplosions.clear()
-    hasShot = False
+        data = s.recv(4096)
+        data = data.decode('utf-8')
+        data = eval(data)
+        player2Pos = data[0]
+        player2Projectiles = data[1]
+        explosions = data[2]
+        if data[3] < player2Lives:
+            ResetWorld()
+            player2Lives = data[3]
+        player2Shot = data[4]
+        player2Jumped = data[5]
+            
+        thisExplosions.clear()
+        hasShot = False
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-
-    currentframe = clock.get_time()
     
     keys = pygame.key.get_pressed()
-
     mouse = pygame.mouse.get_rel()
-    mouseclick = pygame.mouse.get_pressed()
+    mouseClick = pygame.mouse.get_pressed()
+    
+    # Turn camera
     playerAngle[0] -= mouse[0]*mouseSensitivity
     playerAngle[1] -= mouse[1]*mouseSensitivity
     pygame.mouse.set_pos(screenCenter)
@@ -284,6 +294,7 @@ while True:
     else:
         walkSpeed = 0.3
 
+    # Move
     if keys[pygame.K_a]:
         player.vel[0] -= walkSpeed * cosa 
         player.vel[2] -= walkSpeed * sina 
@@ -297,47 +308,48 @@ while True:
         player.vel[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
         player.vel[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
 
+    # Jump
     if keys[pygame.K_SPACE] and player.onGround:
         player.vel[1] += 5
         player.pos[1] = 21
         player.onGround = False
-        pygame.mixer.Sound.play(jumpsound)
+        pygame.mixer.Sound.play(jumpSound)
 
-    if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
+    # Shoot projectile
+    if (keys[pygame.K_q] or mouseClick[0]) and shotCooldown == 0:
         shotCooldown = 5
-        randomness = 0.5
-        xOffset = (random.random() - 0.5) * randomness
-        yOffset = (random.random() - 0.5) * randomness
-        zOffset = (random.random() - 0.5) * randomness
-
-        projectiles.append([player.pos.copy(), [sina * cosb * -20 + xOffset + player.vel[0], sinb * 20 + yOffset + player.vel[1], cosa * cosb * 20 + zOffset + player.vel[2]], False])
-        pygame.mixer.Sound.play(shootsound)
+        projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -projectileSpeed + player.vel[0], sinb * projectileSpeed + player.vel[1], cosa * cosb * projectileSpeed + player.vel[2]], False, True))
+        pygame.mixer.Sound.play(shootSound)
         hasShot = True
-    if (keys[pygame.K_e] or mouseclick[2]):
-        thisExplosions = []
+
+    # Explode projectiles
+    if (keys[pygame.K_e] or mouseClick[2]):
         for projectile in projectiles:
-            if projectile[2] == True:
-                explosionPos = [projectile[0][0], projectile[0][2]]
+            if projectile.onGround and projectile.fromPlayer:
+                explosionPos = [projectile.pos[0], projectile.pos[2]]
                 explosions.append(explosionPos)
-                thisExplosions.append(explosionPos)
+
+                if not singleplayer:
+                    thisExplosions.append(explosionPos)
 
                 projectiles.remove(projectile)
     
     for explosion in explosions:
-        if abovegrid([explosion[0], 0, explosion[1]], 0):
+        if AboveGrid([explosion[0], 0, explosion[1]], 0):
             pygame.mixer.Sound.play(explodesound)
             tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
         player.AddExplosionVel(explosion)
         player.CapVel()
 
-    enemyDistance = length(difference(player.pos, player2Pos))
-    volume = 1 / (1 + enemyDistance)
-    enemyshootsound.set_volume(volume)
-    enemyjumpsound.set_volume(volume)
-    if enemyShot:
-        pygame.mixer.Sound.play(enemyshootsound)
-    if enemyJumped:
-        pygame.mixer.Sound.play(enemyjumpsound)
+    if not singleplayer:
+        player2Distance = Length(Difference(player.pos, player2Pos))
+        volume = 1 / (1 + player2Distance)
+        player2ShootSound.set_volume(volume)
+        player2JumpSound.set_volume(volume)
+        if player2Shot:
+            pygame.mixer.Sound.play(player2ShootSound)
+        if player2Jumped:
+            pygame.mixer.Sound.play(player2JumpSound)
 
     if player.onGround == False:
         player.vel[1] -= 0.1
@@ -345,19 +357,17 @@ while True:
     if shotCooldown != 0:
         shotCooldown -= 1
 
-    oldplayery = player.pos[1]
+    oldPlayerY = player.pos[1]
     player.pos[0] += player.vel[0]
     player.pos[1] += player.vel[1]
     player.pos[2] += player.vel[2]
-
 
     player.vel[0] *= 0.9
     player.vel[1] *= 0.98
     player.vel[2] *= 0.9
 
-
     if player.onGround == False:
-        player.vel[1] -= gravityacc
+        player.vel[1] -= gravity
 
     else:
         player.vel[0] *= 0.4
@@ -367,8 +377,8 @@ while True:
         if player.vel[2] < 0.001 and player.vel[0] > -0.001:
             player.vel[2] = 0
 
-    if player.pos[1] <= 20 and abovegrid(player.pos, 5):
-        if oldplayery > 20:
+    if player.pos[1] <= 20 and AboveGrid(player.pos, 5):
+        if oldPlayerY > 20:
             player.pos[1] = 20
             player.vel = [0,0,0]
             player.vel[1] = 0
@@ -378,31 +388,30 @@ while True:
 
     for projectile in projectiles:
 
-        oldy = projectile[0][1]
-        if projectile[2] == False:
-            projectile[0][0] += projectile[1][0]
-            projectile[0][1] += projectile[1][1]
-            projectile[0][2] += projectile[1][2]
-            projectile[1][1] -= gravityacc
+        oldY = projectile.pos[1]
+        if projectile.onGround == False:
+            projectile.pos[0] += projectile.vel[0]
+            projectile.pos[1] += projectile.vel[1]
+            projectile.pos[2] += projectile.vel[2]
+            projectile.vel[1] -= gravity
 
-        if oldy > 2 and projectile[0][1] <= 2 and abovegrid(projectile[0],1) == 1:
-            projectile[1] = [0,0,0]
-            projectile[0][1] = 2
-            projectile[2] = True
+        if oldY > 2 and projectile.pos[1] <= 2 and AboveGrid(projectile.pos,1) == 1:
+            projectile.vel = [0,0,0]
+            projectile.pos[1] = 2
+            projectile.onGround = True
 
-        if (projectile[0][1] < 2 and player.pos[1] >= 20) or (projectile[0][1] >= 2 and player.pos[1] < 20):
+        if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
+            rotatedProjectile = Rotate(projectile.pos)
+            if rotatedProjectile[2] > 10:
+                projectedProjectile = Project(rotatedProjectile)
+                pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
 
-            rprojectile = rotate(projectile[0])
-            if rprojectile[2] > 10:
-                pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
-
-
-        
-        if projectile[0][1] < -10:
+        if projectile.pos[1] < -10:
             projectiles.remove(projectile)
 
-
+    # ---------------------------
+    #          Renderer
+    # ---------------------------
 
     polygons = []
 
@@ -412,53 +421,44 @@ while True:
 
     for z, row in enumerate(tiles):
         for x, column in enumerate(row):
-            
-            if column == 1:
-                
+            if column == 1:     
                 tile = [[x*gridSize,0,z*gridSize],
                         [x*gridSize,0,(z+1)*gridSize],
                         [(x+1)*gridSize,0,(z+1)*gridSize],
-                        [(x+1)*gridSize,0,z*gridSize]]
-                        
-                points = [rotate(point) for point in tile]
+                        [(x+1)*gridSize,0,z*gridSize]]            
+                points = [Rotate(point) for point in tile]
                 polygon = []
                 for point in points:
                     tpoint = tuple(point)
                     if tpoint in cache:
                         polygon.append(cache[tpoint])
-
-
                     else:
-
-                        
                         if point[2] > 10:
-                            ppoint = project(point)
+                            ppoint = Project(point)
                             polygon.append(ppoint)
                             cache[tpoint] = ppoint
                             a += 1
-
                         else:
                             point2 = points[points.index(point) - 1]
                             if point2[2] > 10:
-                                intpoint = line_intersection(point, point2)
+                                intpoint = LineIntersection(point, point2)
                                 tintpoint = tuple(intpoint)
                                 if tintpoint in cache:                     
                                     polygon.append(cache[tintpoint])
                                 else:
-                                    pintpoint = project(intpoint)
+                                    pintpoint = Project(intpoint)
                                     polygon.append(pintpoint)
                                     cache[tuple(intpoint)] = pintpoint
                                     a +=1
 
                             point2 = points[(points.index(point) + 1) % 4]
                             if point2[2] > 10:
-                                
-                                intpoint = line_intersection(point, point2)
+                                intpoint = LineIntersection(point, point2)
                                 tintpoint = tuple(intpoint)
                                 if tintpoint in cache:
                                     polygon.append(cache[tintpoint])
                                 else:
-                                    pintpoint = project(intpoint)
+                                    pintpoint = Project(intpoint)
                                     polygon.append(pintpoint)
                                     cache[tuple(intpoint)] = pintpoint
                                     a +=1
@@ -472,31 +472,33 @@ while True:
                     if (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
                         color = ((tile[0][0]+tile[0][2])%155+100,0,0)
                         pygame.gfxdraw.filled_polygon(screen, polygon, color)
-
-    rbotPos = [rotate(player2Pos),rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
+    if singleplayer:
+        rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
+    else:
+        rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
     if rbotPos[0][2] > 10:
 
-        pbot = [project(rbotPos[0]), project(rbotPos[1]), project(rbotPos[2]), project(rbotPos[3]), project(rbotPos[4])]
+        pbot = [Project(rbotPos[0]), Project(rbotPos[1]), Project(rbotPos[2]), Project(rbotPos[3]), Project(rbotPos[4])]
         
         pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[1], pbot[2]))
         pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
         pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
 
     for projectile in projectilesPos:
-        if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
+        if (projectile.vel >= 2 and player.pos[1] >= 20) or (projectile.vel < 2 and player.pos[1] < 20):
 
-            rprojectile = rotate(projectile)
-            if rprojectile[2] > 10:
-                pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
+            rotatedProjectile = Rotate(projectile)
+            if rotatedProjectile[2] > 10:
+                projectedProjectile = Project(rotatedProjectile)
+                pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
     
-    for projectile in enemyProjectiles:
-        if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
+    for projectile in player2Projectiles:
+        if (projectile.vel >= 2 and player.pos[1] >= 20) or (projectile.vel < 2 and player.pos[1] < 20):
 
-            rprojectile = rotate(projectile)
-            if rprojectile[2] > 10:
-                pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (255,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
+            rotatedProjectile = Rotate(projectile)
+            if rotatedProjectile[2] > 10:
+                projectedProjectile = Project(rotatedProjectile)
+                pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
 
     if player.pos[1] < -10:
         ResetWorld()
