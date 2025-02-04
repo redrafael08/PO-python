@@ -14,7 +14,7 @@ pygame.init()
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
-singleplayer = False
+singleplayer = True
 
 bg = pygame.image.load('background.png')
 
@@ -90,25 +90,34 @@ while running:
 #                 Game
 # -------------------------------------
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ip = socket.gethostbyname(socket.gethostname()) 
-print(ip)
-s.connect((input('give ip addres of the server: '), 5555))
+# Connect client to server
+if not singleplayer:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ip = socket.gethostbyname(socket.gethostname()) 
+    print(ip)
+    s.connect((input('give ip addres of the server: '), 5555))
 
 pygame.init()
 
+# Sounds
 shootSound = pygame.mixer.Sound('laserShoot.wav')
 explodesound = pygame.mixer.Sound('explosion.wav')
 jumpSound = pygame.mixer.Sound('jump.wav')
 player2ShootSound = pygame.mixer.Sound('laserShoot.wav')
 player2JumpSound = pygame.mixer.Sound('jump.wav')
 
+# Screen values
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
+
+# Constants
 horizontalVelCap = 10
 verticalVelCap = 10
+projectileSpeed = 20
+gridSize = 20
+gravity = 0.2
 
 def Length(vector):
     return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
@@ -154,18 +163,24 @@ class Projectile():
         self.fromPlayer = fromPlayer
 
 player = Player([200, 25, 200], [0,0,0], False)
-player2Pos = [0,25,0]
 walkSpeed = 3
 playerAngle = [0, 0]
 shotCooldown = 0
 mouseSensitivity = 0.006
 lives = 5
-player2Lives = 5
 hasShot = False
 hasJumped = False
-projectileSpeed = 20
 
-gridSize = 20
+player2Lives = 5
+player2Pos = [0,25,0]
+
+bot = Player([200, 25, 200], [0,0,0], False)
+botcooldown = 60
+botSpeed = 3
+botShotColor = (200,200,200)
+lastMinDistance = 1000000000
+targetPos = [200, 25, 200]
+
 tiles = []
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 50)
@@ -175,12 +190,9 @@ projectiles = []
 thisExplosions = []
 projectilesPos = []
 
-
 veldown = 0
-gravity = 0.2
 
-
-
+# Create tiles
 for z in range(20):
     row = []
     for x in range(20):
@@ -233,7 +245,9 @@ def ResetWorld():
 while True:
     clock.tick(30)
     screen.fill((174, 255, 255))
+    explosions = []
     
+    # Communicat with server
     if not singleplayer:
         projectilesPos.clear()
         for projectile in projectiles:
@@ -263,6 +277,7 @@ while True:
             pygame.quit()
             exit()
     
+    # Get inputs
     keys = pygame.key.get_pressed()
     mouse = pygame.mouse.get_rel()
     mouseClick = pygame.mouse.get_pressed()
@@ -334,23 +349,7 @@ while True:
 
                 projectiles.remove(projectile)
     
-    for explosion in explosions:
-        if AboveGrid([explosion[0], 0, explosion[1]], 0):
-            pygame.mixer.Sound.play(explodesound)
-            tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
-        player.AddExplosionVel(explosion)
-        player.CapVel()
-
-    if not singleplayer:
-        player2Distance = Length(Difference(player.pos, player2Pos))
-        volume = 1 / (1 + player2Distance)
-        player2ShootSound.set_volume(volume)
-        player2JumpSound.set_volume(volume)
-        if player2Shot:
-            pygame.mixer.Sound.play(player2ShootSound)
-        if player2Jumped:
-            pygame.mixer.Sound.play(player2JumpSound)
-
+    # Player logic
     if player.onGround == False:
         player.vel[1] -= 0.1
 
@@ -386,8 +385,113 @@ while True:
     else:
         player.onGround = False
 
-    for projectile in projectiles:
+    # Bot logic
+    if singleplayer:
+        if bot.onGround:
+            botSpeed = 1
+        else:
+            botSpeed = 0.1
 
+        if not bot.onGround and not AboveGrid(bot.pos, 5):
+            if AboveGrid(targetPos, 0):
+                minDistance = lastMinDistance
+            else:
+                minDistance = 100000000
+            for z, row in enumerate(tiles):
+                for x, column in enumerate(row):
+                    if column == 1:
+                        tilePos = [(x + 0.5) * gridSize, 0, (z + 0.5) * gridSize]
+                        relativeDistance = (tilePos[0] - bot.pos[0])**2 + (tilePos[2] - bot.pos[2])**2
+                        if relativeDistance < minDistance:
+                            targetPos = tilePos
+                            minDistance = relativeDistance
+            lastMinDistance = minDistance
+
+        if bot.pos[0] < targetPos[0] -5:
+            bot.vel[0] += botSpeed
+        elif bot.pos[0] > targetPos[0] + 5:
+            bot.vel[0] -= botSpeed 
+        if bot.pos[2] < targetPos[2] -5:
+            bot.vel[2] += botSpeed
+        elif bot.pos[2] > targetPos[2] + 5:
+            bot.vel[2] -= botSpeed
+
+        oldBotY = bot.pos[1]
+        bot.pos[0] += bot.vel[0]
+        bot.pos[1] += bot.vel[1]
+        bot.pos[2] += bot.vel[2]
+
+        if not bot.onGround:
+            bot.vel[1] -= gravity
+        
+        if bot.onGround == False:
+            bot.vel[0] *= 0.9
+            bot.vel[1] *= 0.98
+            bot.vel[2] *= 0.9
+        else:
+            bot.vel[0] *= 0.4
+            bot.vel[2] *= 0.4
+            if bot.vel[0] < 0.001 and bot.vel[0] > -0.001:
+                bot.vel[0] = 0
+            if bot.vel[2] < 0.001 and bot.vel[0] > -0.001:
+                bot.vel[2] = 0
+
+        if bot.pos[1] <= 20 and AboveGrid(bot.pos, 5):
+            if oldBotY > 20:
+                bot.pos[1] = 20
+                bot.vel[1] = 0
+                bot.onGround = True
+        else:
+            bot.onGround = False
+
+        if botcooldown == 0:
+            difference = [player.pos[0] - bot.pos[0], 0, player.pos[2] - bot.pos[2]] 
+            distancePlayer = Length(difference)
+            direction = [difference[0], 0.2 * distancePlayer - 30 - bot.pos[1] * 0.4, difference[2]]
+            distanceFactor = projectileSpeed / Length(direction)
+            direction = [direction[0] * distanceFactor, direction[1] * distanceFactor, direction[2] * distanceFactor]
+
+            projectiles.append(Projectile(bot.pos.copy(), direction + bot.vel, False, False))
+            if random.randint(1, 5) == 1:
+                for projectile in projectiles:
+                    if projectile.onGround and not projectile.fromPlayer:
+                        explosionPos = [projectile.pos[0], projectile.pos[2]]
+                        explosions.append(explosionPos)
+
+                        tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
+                        player2Projectiles.remove(projectile)
+
+            botcooldown = 30
+        else:
+            botcooldown -= 1
+
+    # Calculate explosions
+    for explosion in explosions:
+        if AboveGrid([explosion[0], 0, explosion[1]], 0):
+            tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
+        player.AddExplosionVel(explosion)
+        if singleplayer:
+            bot.AddExplosionVel(explosion)
+        pygame.mixer.Sound.play(explodesound)
+    
+    player.CapVel()
+    if singleplayer:
+        bot.CapVel()
+
+    if singleplayer:
+        player2Distance = Length(Difference(player.pos, bot.pos))
+    else:
+        player2Distance = Length(Difference(player.pos, player2Pos))
+    volume = 1 / (1 + player2Distance)
+    player2ShootSound.set_volume(volume)
+    player2JumpSound.set_volume(volume)
+
+    if player2Shot:
+        pygame.mixer.Sound.play(player2ShootSound)
+    if player2Jumped:
+        pygame.mixer.Sound.play(player2JumpSound)
+
+    for projectile in projectiles:
         oldY = projectile.pos[1]
         if projectile.onGround == False:
             projectile.pos[0] += projectile.vel[0]
@@ -400,14 +504,14 @@ while True:
             projectile.pos[1] = 2
             projectile.onGround = True
 
+        if projectile.pos[1] < -10:
+            projectiles.remove(projectile)
+
         if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
             rotatedProjectile = Rotate(projectile.pos)
             if rotatedProjectile[2] > 10:
                 projectedProjectile = Project(rotatedProjectile)
                 pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
-
-        if projectile.pos[1] < -10:
-            projectiles.remove(projectile)
 
     # ---------------------------
     #          Renderer
@@ -473,7 +577,7 @@ while True:
                         color = ((tile[0][0]+tile[0][2])%155+100,0,0)
                         pygame.gfxdraw.filled_polygon(screen, polygon, color)
     if singleplayer:
-        rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
+        rbotPos = [Rotate(bot.pos),Rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]-5]),Rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]+5]),Rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]+5]),Rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]-5])]
     else:
         rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
     if rbotPos[0][2] > 10:
@@ -490,7 +594,10 @@ while True:
             rotatedProjectile = Rotate(projectile)
             if rotatedProjectile[2] > 10:
                 projectedProjectile = Project(rotatedProjectile)
-                pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                if projectile.fromPlayer:
+                    pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                else:
+                    pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
     
     for projectile in player2Projectiles:
         if (projectile.vel >= 2 and player.pos[1] >= 20) or (projectile.vel < 2 and player.pos[1] < 20):
