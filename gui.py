@@ -25,38 +25,59 @@ def Button(pos,size,text,command):
     text = font.render(f"{text}", True, (0, 200, 0))
     screen.blit(text, (pos[0]-text.get_width()/2, pos[1]-text.get_height()/2))
 
+def Entry(pos,size,defaulttext,text):
+    global entry
+    entry = True
+    buttonsurface = pygame.Surface(size, pygame.SRCALPHA)
+    pygame.draw.rect(buttonsurface, (255,255,255,175), (0,0,size[0],size[1]))
+    screen.blit(buttonsurface, (pos[0]-size[0]/2, pos[1]-size[1]/2))
+    pygame.draw.rect(screen, (0,200,0), (pos[0]-size[0]/2,pos[1]-size[1]/2,size[0],size[1]), 5)
+    if text == '':
+        textdisplay = font.render(f"{defaulttext}", True, (0, 200, 0))
+    else:
+        textdisplay = font.render(f"{text}", True, (0, 200, 0))
+    screen.blit(textdisplay, (pos[0]-textdisplay.get_width()/2, pos[1]-textdisplay.get_height()/2))
+
 def difpage(newpage):
     global currentbuttons
     currentbuttons = newpage
 
-def server():
-    global running
-    subprocess.Popen(["python", "server.py"])
+def startgame(type):
+    global running, singleplayer
+
+    if type == 'server':
+        subprocess.Popen(["python", "server.py"])
+    if type == 'client':
+        singleplayer = False
+    if type == 'single':
+        singleplayer = True
+
     running = False
 
 
+buttonsize = [700,100]
 
-
-
+ipaddress = ''
 
 mainbuttons = [
-    lambda: Button([screenCenter[0],screenCenter[1]],[500,100], 'Singleplayer',lambda: subprocess.Popen(["python", "Splief bot.py"])),
-    lambda: Button([screenCenter[0],screenCenter[1]+150],[500,100], 'Multiplayer',lambda: difpage(multiplayerbuttons)),
-    lambda: Button([screenCenter[0],screenCenter[1]+300],[500,100], 'Quit', lambda: exit())
+    lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Singleplayer',lambda: startgame('single')),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Multiplayer',lambda: difpage(multiplayerbuttons)),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Quit', lambda: exit())
 ]
 
 multiplayerbuttons = [
-    lambda: Button([screenCenter[0],screenCenter[1]],[500,100], 'Create server',server),
-    lambda: Button([screenCenter[0],screenCenter[1]+150],[500,100], 'Join server',lambda: difpage(joinbuttons)),
-    lambda: Button([screenCenter[0],screenCenter[1]+300],[500,100], 'Back', lambda: difpage(mainbuttons))
+    lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Create server',lambda: startgame('server')),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join server',lambda: difpage(joinbuttons)),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(mainbuttons))
 ]
 joinbuttons = [
-    lambda: Button([screenCenter[0],screenCenter[1]],[500,100], 'E',lambda: print('e')),
-    lambda: Button([screenCenter[0],screenCenter[1]+150],[500,100], 'Join server',lambda: print('e')),
-    lambda: Button([screenCenter[0],screenCenter[1]+300],[500,100], 'Back', lambda: difpage(mainbuttons))  
+    lambda: Entry([screenCenter[0],screenCenter[1]],buttonsize, 'Type IP server', ipaddress),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join',lambda: startgame('client')),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
 ]
 
 currentbuttons = mainbuttons
+entry = False
 
 clock = pygame.time.Clock()
 running = True
@@ -76,12 +97,24 @@ while running:
                 if button[0] < mouse[0] < button[2] and button[1] < mouse[1] < button[3]:
                     button[4]()
 
+
+        if event.type == pygame.KEYDOWN:
+            if entry:
+                if event.key == pygame.K_BACKSPACE:
+                    ipaddress = ipaddress[:-1]  
+
+                if (event.unicode.isnumeric() or event.unicode == '.') and len(ipaddress) <= 15:
+                    ipaddress += event.unicode
+
+        
+
    
 
     screen.blit(bg, (0,0))
     buttons = []
-    for button in currentbuttons:
-        button()
+    entry = False
+    for widget in currentbuttons:
+        widget()
 
 
     pygame.display.update()
