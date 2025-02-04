@@ -40,7 +40,7 @@ class Player():
         self.onGround = onGround
     
     def AddExplosionVel(self, explosionPos):
-        relativePos = difference(self.pos, explosionPos)
+        relativePos = [self.pos[0] - explosionPos[0], self.pos[1] - explosionPos[1], self.pos[2] - explosionPos[2]]
         distance = length(relativePos)
         direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
 
