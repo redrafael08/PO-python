@@ -15,6 +15,12 @@ client, addr = s.accept()
 print('client1 connected')
 client2, addr2 = s.accept()
 print('client2 connected')
+
+message = 'start'
+message = message.encode()
+client.send(message)
+client2.send(message)
+
 while True:
     data = client.recv(4096)
     client2.send(data)

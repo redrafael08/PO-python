@@ -13,7 +13,7 @@ screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
-bg = pygame.image.load('background.png')
+bg = pygame.image.load('assets\\background.png')
 
 font = pygame.font.Font(None, 100)
 
@@ -106,9 +106,6 @@ while running:
 
                 if (event.unicode.isnumeric() or event.unicode == '.') and len(ipaddress) <= 15:
                     ipaddress += event.unicode
-
-        
-
    
 
     screen.blit(bg, (0,0))
