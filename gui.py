@@ -2,8 +2,9 @@ import math
 import pygame
 from sys import exit
 import random
-import numpy as np
 import subprocess
+import pygame.gfxdraw
+import socket
 
 
 
@@ -119,15 +120,6 @@ while running:
 
     pygame.display.update()
 
-import math
-import pygame
-from sys import exit
-import random
-import pygame.gfxdraw
-import socket
-
-
-
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ip = socket.gethostbyname(socket.gethostname()) 
 print(ip)
@@ -161,7 +153,7 @@ class Player():
         self.onGround = onGround
     
     def AddExplosionVel(self, explosionPos):
-        relativePos = difference(self.pos, explosionPos)
+        relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
         distance = length(relativePos)
         direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
 
@@ -564,11 +556,3 @@ while True:
     screen.blit(text, (100, 500))
     '''
     pygame.display.update()
-
-
-
-
-
-
-
-
