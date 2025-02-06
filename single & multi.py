@@ -238,7 +238,7 @@ while True:
     player = Player([200, 25, 200], [0,0,0], False)
     walkSpeed = 3
     playerAngle = [0, 0]
-    shotCooldown = 0
+    shotCooldown = 15
     mouseSensitivity = 0.006
     lives = 5
     hasShot = False
@@ -321,6 +321,8 @@ while True:
     while running:
         clock.tick(30)
         screen.fill((174, 255, 255))
+
+        explosions = []
         
         if not singleplayer:
             projectilesPos.clear()
@@ -552,7 +554,7 @@ while True:
                             explosions.append(explosionPos)
 
                             tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
-                            player2Projectiles.remove(projectile)
+                            projectiles.remove(projectile)
 
                 botcooldown = 30
             else:
@@ -575,17 +577,16 @@ while True:
             player2Distance = Length(Difference(player.pos, bot.pos))
         else:
             player2Distance = Length(Difference(player.pos, player2Pos))
-        volume = 1 / (1 + player2Distance)
-        player2ShootSound.set_volume(volume)
-        player2JumpSound.set_volume(volume)
+            volume = 1 / (1 + player2Distance)
+            player2ShootSound.set_volume(volume)
+            player2JumpSound.set_volume(volume)
 
-        if player2Shot:
-            pygame.mixer.Sound.play(player2ShootSound)
-        if player2Jumped:
-            pygame.mixer.Sound.play(player2JumpSound)
+            if player2Shot:
+                pygame.mixer.Sound.play(player2ShootSound)
+            if player2Jumped:
+                pygame.mixer.Sound.play(player2JumpSound)
 
         for projectile in projectiles:
-
             oldY = projectile.pos[1]
             if projectile.onGround == False:
                 projectile.pos[0] += projectile.vel[0]
@@ -601,6 +602,7 @@ while True:
             if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
                 rotatedProjectile = Rotate(projectile.pos)
                 if rotatedProjectile[2] > 10:
+                    print("rendered projectile")
                     projectedProjectile = Project(rotatedProjectile)
                     pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
 
@@ -682,10 +684,10 @@ while True:
             pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
             pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
 
-        for projectile in projectilesPos:
-            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
+        for projectile in projectiles:
+            if (projectile.pos[1] >= 2 and player.pos[1] >= 20) or (projectile.pos[1] < 2 and player.pos[1] < 20):
 
-                rotatedProjectile = Rotate(projectile)
+                rotatedProjectile = Rotate(projectile.pos)
                 if rotatedProjectile[2] > 10:
                     projectedProjectile = Project(rotatedProjectile)
                     if projectile.fromPlayer:
@@ -693,13 +695,14 @@ while True:
                     else:
                         pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
         
-        for projectile in player2Projectiles:
-            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
+        if not singleplayer:
+            for projectile in player2Projectiles:
+                if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
-                rotatedProjectile = Rotate(projectile)
-                if rotatedProjectile[2] > 10:
-                    projectedProjectile = Project(rotatedProjectile)
-                    pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                    rotatedProjectile = Rotate(projectile)
+                    if rotatedProjectile[2] > 10:
+                        projectedProjectile = Project(rotatedProjectile)
+                        pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
 
         if player.pos[1] < -10:
             ResetWorld()
