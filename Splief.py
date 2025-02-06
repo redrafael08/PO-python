@@ -2,382 +2,615 @@ import math
 import pygame
 from sys import exit
 import random
+import subprocess
 import pygame.gfxdraw
+import socket
+
+
 
 pygame.init()
-
-
-shootsound = pygame.mixer.Sound('laserShoot.wav')
-explodesound = pygame.mixer.Sound('explosion.wav')
-jumpsound = pygame.mixer.Sound('jump.wav')
-
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
-screenDistance = 400
 screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
+bg = pygame.image.load('assets\\background.png')
 
-playerPos = [200, 25, 200]
-playerSpeed = [0,0,0]
-walkSpeed = 3
-playerAngle = [0, 0]
-shotCooldown = 0
-mouseSensitivity = 0.006
-
-touchground = False
-gridSize = 20
-tiles = []
-clock = pygame.time.Clock()
-font = pygame.font.Font(None, 50)
-pygame.mouse.set_visible(False)
-
-projectiles = []
-
-
-veldown = 0
-gravityacc = 0.2
-
-
-
-
-
-for z in range(20):
-    row = []
-    for x in range(20):
-        if (x+z)%1 == 0:
-            row.append(1)
-        else:
-            row.append(0)
-
-    tiles.append(row)
-
-
-
-
-def line_intersection(point1, point2):
-    t = (10 - point1[2]) / (point2[2] - point1[2])
-    x = point1[0] + t * (point2[0] - point1[0])
-    y = point1[1] + t * (point2[1] - point1[1])
-    return [x, y, 10]
-
-
-def rotate(point):
-    dx, dy, dz = point[0] - playerPos[0], point[1] - playerPos[1], point[2] - playerPos[2]
-    xr = dz * sina + dx * cosa
-    zr = dz * cosa - dx * sina
-    yr = dy
-    x = xr
-    y = yr * cosb - zr * sinb
-    z = zr * cosb + yr * sinb
-    return [x, y, z]
-
-
-def project(point):
-
-    projX = (point[0]) / (point[2]) * screenDistance + screenCenter[0]
-    projY = -(point[1]) / (point[2]) * screenDistance + screenCenter[1]
-    return [projX, projY]
-
-def abovegrid(position, size):
-    if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] + size >= 0:
-        if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
-            return True
-    return False
-
-class Projectile():
-    def __init__(self, pos, vel, onGround):
-        self.pos = pos
-        self.vel = vel
-        self.onGround = onGround
-
-    
+serveron = 0
 
 while True:
-    clock.tick(30)
-    screen.fill((174, 255, 255))
+
+    pygame.mouse.set_visible(True)
 
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
+    font = pygame.font.Font(None, 100)
 
-    if not pygame.mixer.music.get_busy():
-        pygame.mixer.music.load(f'song ({random.randint(1,7)}).wav')
-        pygame.mixer.music.play()
 
-    currentframe = clock.get_time()
+
+    def Button(pos,size,text,command):
+        buttons.append([pos[0]-size[0]/2, pos[1]-size[1]/2, pos[0]+size[0]/2, pos[1]+size[1]/2, command])
+        buttonsurface = pygame.Surface(size, pygame.SRCALPHA)
+        pygame.draw.rect(buttonsurface, (255,255,255,175), (0,0,size[0],size[1]))
+        screen.blit(buttonsurface, (pos[0]-size[0]/2, pos[1]-size[1]/2))
+        pygame.draw.rect(screen, (0,200,0), (pos[0]-size[0]/2,pos[1]-size[1]/2,size[0],size[1]), 5)
+        text = font.render(f"{text}", True, (0, 200, 0))
+        screen.blit(text, (pos[0]-text.get_width()/2, pos[1]-text.get_height()/2))
+
+    def Entry(pos,size,defaulttext,text):
+        global entry
+        entry = True
+        buttonsurface = pygame.Surface(size, pygame.SRCALPHA)
+        pygame.draw.rect(buttonsurface, (255,255,255,175), (0,0,size[0],size[1]))
+        screen.blit(buttonsurface, (pos[0]-size[0]/2, pos[1]-size[1]/2))
+        pygame.draw.rect(screen, (0,200,0), (pos[0]-size[0]/2,pos[1]-size[1]/2,size[0],size[1]), 5)
+        if text == '':
+            textdisplay = font.render(f"{defaulttext}", True, (0, 200, 0))
+        else:
+            textdisplay = font.render(f"{text}", True, (0, 200, 0))
+        screen.blit(textdisplay, (pos[0]-textdisplay.get_width()/2, pos[1]-textdisplay.get_height()/2))
+
+    def difpage(newpage):
+        global currentbuttons, ipaddress, serveron
+        if newpage == joinbuttons:
+            ipaddress = ''
+        if serveron != 0:
+            serveron.kill()
+            serveron = 0
+            print('server closed')
+        currentbuttons = newpage
+
+    def startgame(type):
+        global running, singleplayer, ipaddress, serveron, s
+
+        difpage(ipbuttons)
+
+        if type == 'server':
+            serveron = subprocess.Popen(["python", "server.py"])
+
+            ipaddress = socket.gethostbyname(socket.gethostname())
+            singleplayer = False
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((ipaddress, 5555))
+            s.setblocking(False)
+            #running = False
+
+        if type == 'single':
+            singleplayer = True
+            running = False
+
+
+        if type == 'client' and ipaddress != '':
+            singleplayer = False
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((ipaddress, 5555))
+            except:
+                difpage(joinbuttons)
+            s.setblocking(False)
+        # running = False
+
+
+    buttonsize = [700,100]
+
+    ipaddress = ''
+
+    mainbuttons = [
+        lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Singleplayer',lambda: startgame('single')),
+        lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Multiplayer',lambda: difpage(multiplayerbuttons)),
+        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Quit', lambda: exit())
+    ]
+
+    multiplayerbuttons = [
+        lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Create server',lambda: startgame('server')),
+        lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join server',lambda: difpage(joinbuttons)),
+        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(mainbuttons))
+    ]
+    joinbuttons = [
+        lambda: Entry([screenCenter[0],screenCenter[1]],buttonsize, 'Type IP server', ipaddress),
+        lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join',lambda: startgame('client')),
+        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
+    ]
+
+    ipbuttons = [
+        lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, ipaddress, lambda: difpage(ipbuttons)),  
+        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
+    ]
+
+    currentbuttons = mainbuttons
+    entry = False
+
+    clock = pygame.time.Clock()
+    running = True
+    while running:
+        clock.tick(60)
+        screen.fill((255, 255, 255))
+
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse = pygame.mouse.get_pos()
+
+                for button in buttons:
+                    if button[0] < mouse[0] < button[2] and button[1] < mouse[1] < button[3]:
+                        button[4]()
+
+
+            if event.type == pygame.KEYDOWN:
+                if entry:
+                    if event.key == pygame.K_BACKSPACE:
+                        ipaddress = ipaddress[:-1]  
+
+                    if (event.unicode.isnumeric() or event.unicode == '.') and len(ipaddress) <= 15:
+                        ipaddress += event.unicode
+
+
+        if currentbuttons == ipbuttons and singleplayer == False:
+            try:
+                data = s.recv(4096).decode()
+                if data:
+                    running = False
+            except:
+                pass
     
-    keys = pygame.key.get_pressed()
 
-    mouse = pygame.mouse.get_rel()
-    mouseclick = pygame.mouse.get_pressed()
-    playerAngle[0] -= mouse[0]*mouseSensitivity
-    playerAngle[1] -= mouse[1]*mouseSensitivity
-    pygame.mouse.set_pos(screenCenter)
+        screen.blit(bg, (0,0))
+        buttons = []
+        entry = False
+        for widget in currentbuttons:
+            widget()
 
-    if keys[pygame.K_LEFT]:
-        playerAngle[0] += math.radians(5)
-    if keys[pygame.K_RIGHT]:
-        playerAngle[0] -= math.radians(5)
-    if keys[pygame.K_UP]:
-        playerAngle[1] += math.radians(5)
-    if keys[pygame.K_DOWN]:
-        playerAngle[1] -= math.radians(5)
 
-    if playerAngle[1] > math.radians(90):
-        playerAngle[1] = math.radians(90)
-    if playerAngle[1] < math.radians(-90):
-        playerAngle[1] = math.radians(-90) 
+        pygame.display.update()
 
-    sina, cosa = math.sin(playerAngle[0]), math.cos(playerAngle[0])
-    sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])    
+    # -------------------------------------
+    #                 Game
+    # -------------------------------------
 
-    if touchground:
-        walkSpeed = 3
-    else:
-        walkSpeed = 0.3
+    if singleplayer == False:
+        s.setblocking(True)
 
-    if keys[pygame.K_a]:
-        playerSpeed[0] -= walkSpeed * cosa 
-        playerSpeed[2] -= walkSpeed * sina 
-    if keys[pygame.K_d]:
-        playerSpeed[0] += walkSpeed * cosa 
-        playerSpeed[2] += walkSpeed * sina 
-    if keys[pygame.K_w]:
-        playerSpeed[0] += walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerSpeed[2] += walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
-    if keys[pygame.K_s]:
-        playerSpeed[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
-        playerSpeed[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
 
-    if keys[pygame.K_SPACE] and touchground:
+    shootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
+    explodesound = pygame.mixer.Sound('assets\\explosion.wav')
+    jumpSound = pygame.mixer.Sound('assets\\jump.wav')
+    player2ShootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
+    player2JumpSound = pygame.mixer.Sound('assets\\jump.wav')
+
+    screenDistance = 400
+    horizontalVelCap = 10
+    verticalVelCap = 10
+
+    def Length(vector):
+        return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
+
+    def Difference(vector1, vector2):
+        return [vector1[0] - vector2[0], vector1[1] - vector2[1], vector1[2] - vector2[2]]
+
+    class Player():
+        def __init__(self, pos, vel, onGround):
+            self.pos = pos
+            self.vel = vel
+            self.onGround = onGround
         
-        pygame.mixer.Sound.play(jumpsound)
-        playerSpeed[1] += 5
-        playerPos[1] = 21
-        touchground = False
+        def AddExplosionVel(self, explosionPos):
+            relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
+            distance = Length(relativePos)
+            direction = [relativePos[0] / distance, relativePos[1] / distance, relativePos[2] / distance]
 
-    
-    if (keys[pygame.K_q] or mouseclick[0]) and shotCooldown == 0:
+            self.vel[0] += direction[0] / distance * 10
+            self.vel[1] -= (direction[1] - 5) / distance * 10
+            self.vel[2] += direction[2] / distance * 10
 
-        pygame.mixer.Sound.play(shootsound)
+        def CapVel(self):
+            if self.vel[0] > horizontalVelCap:
+                self.vel[0] = horizontalVelCap
+            if self.vel[0] < -horizontalVelCap:
+                self.vel[0] = -horizontalVelCap
+            if self.vel[1] > verticalVelCap:
+                self.vel[1] = verticalVelCap
+            if self.vel[1] < -verticalVelCap:
+                self.vel[1] = -verticalVelCap
+            if self.vel[2] > horizontalVelCap:
+                self.vel[2] = horizontalVelCap
+            if self.vel[2] < -horizontalVelCap:
+                self.vel[2] = -horizontalVelCap
 
-        shotCooldown = 5
-        randomness = 0.5
-        xOffset = (random.random() - 0.5) * randomness
-        yOffset = (random.random() - 0.5) * randomness
-        zOffset = (random.random() - 0.5) * randomness
+    class Projectile():
+        def __init__(self, pos, vel, onGround, fromPlayer):
+            self.pos = pos
+            randomness = 0.5
+            self.vel = [vel[0] + (random.random() - 0.5) * randomness, vel[1] + (random.random() - 0.5) * randomness, vel[2] + (random.random() - 0.5) * randomness]
+            self.onGround = onGround
+            self.fromPlayer = fromPlayer
 
-        projectiles.append(Projectile(playerPos.copy(), [sina * cosb * -20 + xOffset + playerSpeed[0], sinb * 20 + yOffset + playerSpeed[1], cosa * cosb * 20 + zOffset + playerSpeed[2]], False))
+    player = Player([200, 25, 200], [0,0,0], False)
+    player2Pos = [0,25,0]
+    walkSpeed = 3
+    playerAngle = [0, 0]
+    shotCooldown = 0
+    mouseSensitivity = 0.006
+    lives = 5
+    player2Lives = 5
+    hasShot = False
+    hasJumped = False
+    projectileSpeed = 20
 
-    if (keys[pygame.K_e] or mouseclick[2]):
+    gridSize = 20
+    tiles = []
+    clock = pygame.time.Clock()
+    font = pygame.font.Font(None, 50)
+
+
+    projectiles = []
+    thisExplosions = []
+    projectilesPos = []
+    explosions = []
+    player2Projectiles = []
+
+
+    veldown = 0
+    gravity = 0.2
+
+
+
+    for z in range(20):
+        row = []
+        for x in range(20):
+            row.append(1)
+        tiles.append(row)
+
+
+    # Render functions
+
+    def LineIntersection(point1, point2):
+        t = (10 - point1[2]) / (point2[2] - point1[2])
+        x = point1[0] + t * (point2[0] - point1[0])
+        y = point1[1] + t * (point2[1] - point1[1])
+        return [x, y, 10]
+
+    def Rotate(point):
+        dx, dy, dz = point[0] - player.pos[0], point[1] - player.pos[1], point[2] - player.pos[2]
+        xr = dz * sina + dx * cosa
+        zr = dz * cosa - dx * sina
+        yr = dy
+        x = xr
+        y = yr * cosb - zr * sinb
+        z = zr * cosb + yr * sinb
+        return [x, y, z]
+
+    def Project(point):
+
+        projX = (point[0]) / (point[2]) * screenDistance + screenCenter[0]
+        projY = -(point[1]) / (point[2]) * screenDistance + screenCenter[1]
+        return [projX, projY]
+
+
+    def AboveGrid(position, size):
+        if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] + size >= 0:
+            if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
+                return True
+        return False
+
+    def ResetWorld():
+        global lives
+        for z in range(20):
+            for x in range(20):
+                tiles[z][x] = 1
+        player.pos = [200, 25, 200]
+        player.vel = [0,0,0]
+        player.onGround = False
+        projectiles.clear()
+
+    pause = -1
+    running = True
+    while running:
+        clock.tick(30)
+        screen.fill((174, 255, 255))
         
-        
-        for projectile in projectiles:
-            
-            if projectile.onGround == True:
-                pygame.mixer.Sound.play(explodesound)
-                difference = [playerPos[0] - projectile.pos[0], playerPos[1] - projectile.pos[1], playerPos[2] - projectile.pos[2]]
-                tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
-                distanceSqrd = (difference[0]**2+difference[1]**2+difference[2]**2)
-                distance = distanceSqrd**0.5
-                direction = [difference[0] / distance, difference[1] / distance, difference[2] / distance]
+        if not singleplayer:
+            projectilesPos.clear()
+            for projectile in projectiles:
+                projectilesPos.append([round(projectile.pos[0]),round(projectile.pos[1]),round(projectile.pos[2])])
 
-                playerSpeed[0] += direction[0] / distance * 10
-                playerSpeed[1] -= (direction[1] - 5) / distance * 10
-                playerSpeed[2] += direction[2] / distance * 10
+            try:
+                message = str([player.pos, projectilesPos, thisExplosions, lives, hasShot, hasJumped])
+                message = message.encode()
+                s.send(message)
+
+                data = s.recv(4096)
+                data = data.decode('utf-8')
                 
-                if playerSpeed[0] > 5:
-                    playerSpeed[0] = 5
-                if playerSpeed[0] < -5:
-                    playerSpeed[0] = -5
-                if playerSpeed[1] > 20:
-                    playerSpeed[1] = 20
-                if playerSpeed[1] < -20:
-                    playerSpeed[1] = -20
-                if playerSpeed[2] > 5:
-                    playerSpeed[2] = 5
-                if playerSpeed[2] < -5:
-                    playerSpeed[2] = -5
+                data = eval(data)
 
+                player2Pos = data[0]
+                player2Projectiles = data[1]
+                explosions = data[2]
+                if data[3] < player2Lives:
+                    ResetWorld()
+                    player2Lives = data[3]
+                player2Shot = data[4]
+                player2Jumped = data[5]
+                    
+                thisExplosions.clear()
+                hasShot = False
+            except:
+                print('connection lost')
+                running = False
+                break
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pause *= -1
+
+            if pause == 1:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    running = False
+                    s.close()
+
+
+
+        keys = pygame.key.get_pressed()
+        if not pause == 1:
+            mouse = pygame.mouse.get_rel()
+        mouseClick = pygame.mouse.get_pressed()
+        
+        # Turn camera
+        playerAngle[0] -= mouse[0]*mouseSensitivity
+        playerAngle[1] -= mouse[1]*mouseSensitivity
+        if pause == 1: 
+            pygame.mouse.set_visible(True)
+        else:
+            pygame.mouse.set_visible(False)
+            pygame.mouse.set_pos(screenCenter)
+
+        if keys[pygame.K_LEFT]:
+            playerAngle[0] += math.radians(5)
+        if keys[pygame.K_RIGHT]:
+            playerAngle[0] -= math.radians(5)
+        if keys[pygame.K_UP]:
+            playerAngle[1] += math.radians(5)
+        if keys[pygame.K_DOWN]:
+            playerAngle[1] -= math.radians(5)
+
+        if playerAngle[1] > math.radians(90):
+            playerAngle[1] = math.radians(90)
+        if playerAngle[1] < math.radians(-90):
+            playerAngle[1] = math.radians(-90) 
+
+        sina, cosa = math.sin(playerAngle[0]), math.cos(playerAngle[0])
+        sinb, cosb = math.sin(playerAngle[1]), math.cos(playerAngle[1])    
+
+        if player.onGround:
+            walkSpeed = 3
+        else:
+            walkSpeed = 0.3
+
+        # Move
+        if keys[pygame.K_a]:
+            player.vel[0] -= walkSpeed * cosa 
+            player.vel[2] -= walkSpeed * sina 
+        if keys[pygame.K_d]:
+            player.vel[0] += walkSpeed * cosa 
+            player.vel[2] += walkSpeed * sina 
+        if keys[pygame.K_w]:
+            player.vel[0] += walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+            player.vel[2] += walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+        if keys[pygame.K_s]:
+            player.vel[0] -= walkSpeed * math.cos(playerAngle[0] + math.radians(90)) 
+            player.vel[2] -= walkSpeed * math.sin(playerAngle[0] + math.radians(90)) 
+
+        # Jump
+        if keys[pygame.K_SPACE] and player.onGround:
+            player.vel[1] += 5
+            player.pos[1] = 21
+            player.onGround = False
+            pygame.mixer.Sound.play(jumpSound)
+
+        # Shoot projectile
+        if (keys[pygame.K_q] or mouseClick[0]) and shotCooldown == 0:
+            shotCooldown = 5
+            projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -projectileSpeed + player.vel[0], sinb * projectileSpeed + player.vel[1], cosa * cosb * projectileSpeed + player.vel[2]], False, True))
+            pygame.mixer.Sound.play(shootSound)
+            hasShot = True
+
+        # Explode projectiles
+        if (keys[pygame.K_e] or mouseClick[2]):
+            for projectile in projectiles:
+                if projectile.onGround and projectile.fromPlayer:
+                    explosionPos = [projectile.pos[0], projectile.pos[2]]
+                    explosions.append(explosionPos)
+
+                    if not singleplayer:
+                        thisExplosions.append(explosionPos)
+
+                    projectiles.remove(projectile)
+        
+        for explosion in explosions:
+            if AboveGrid([explosion[0], 0, explosion[1]], 0):
+                pygame.mixer.Sound.play(explodesound)
+                tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
+            player.AddExplosionVel(explosion)
+            player.CapVel()
+
+        if not singleplayer:
+            player2Distance = Length(Difference(player.pos, player2Pos))
+            volume = 1 / (1 + player2Distance)
+            player2ShootSound.set_volume(volume)
+            player2JumpSound.set_volume(volume)
+            if player2Shot:
+                pygame.mixer.Sound.play(player2ShootSound)
+            if player2Jumped:
+                pygame.mixer.Sound.play(player2JumpSound)
+
+        if player.onGround == False:
+            player.vel[1] -= 0.1
+
+        if shotCooldown != 0:
+            shotCooldown -= 1
+
+        oldPlayerY = player.pos[1]
+        player.pos[0] += player.vel[0]
+        player.pos[1] += player.vel[1]
+        player.pos[2] += player.vel[2]
+
+        player.vel[0] *= 0.9
+        player.vel[1] *= 0.98
+        player.vel[2] *= 0.9
+
+        if player.onGround == False:
+            player.vel[1] -= gravity
+
+        else:
+            player.vel[0] *= 0.4
+            player.vel[2] *= 0.4
+            if player.vel[0] < 0.001 and player.vel[0] > -0.001:
+                player.vel[0] = 0
+            if player.vel[2] < 0.001 and player.vel[0] > -0.001:
+                player.vel[2] = 0
+
+        if player.pos[1] <= 20 and AboveGrid(player.pos, 5):
+            if oldPlayerY > 20:
+                player.pos[1] = 20
+                player.vel = [0,0,0]
+                player.vel[1] = 0
+                player.onGround = True
+        else:
+            player.onGround = False
+
+        for projectile in projectiles:
+
+            
+            oldY = projectile.pos[1]
+            if projectile.onGround == False:
+                projectile.pos[0] += projectile.vel[0]
+                projectile.pos[1] += projectile.vel[1]
+                projectile.pos[2] += projectile.vel[2]
+                projectile.vel[1] -= gravity
+
+            if oldY > 2 and projectile.pos[1] <= 2 and AboveGrid(projectile.pos,1) == 1:
+                projectile.vel = [0,0,0]
+                projectile.pos[1] = 2
+                projectile.onGround = True
+
+            if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
+                rotatedProjectile = Rotate(projectile.pos)
+                if rotatedProjectile[2] > 10:
+                    projectedProjectile = Project(rotatedProjectile)
+                    pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+
+            if projectile.pos[1] < -10:
                 projectiles.remove(projectile)
 
-    if touchground == False:
-        playerSpeed[1] -= 0.1
+        # ---------------------------
+        #          Renderer
+        # ---------------------------
 
-    if shotCooldown != 0:
-        shotCooldown -= 1
+        polygons = []
 
-    oldplayery = playerPos[1]
-    playerPos[0] += playerSpeed[0]
-    playerPos[1] += playerSpeed[1]
-    playerPos[2] += playerSpeed[2]
+        cache = {}
 
+        a = 0
 
-    playerSpeed[0] *= 0.9
-    playerSpeed[1] *= 0.98
-    playerSpeed[2] *= 0.9
-
-
-    if touchground == False:
-        playerSpeed[1] -= gravityacc
-
-    else:
-        playerSpeed[0] *= 0.4
-        playerSpeed[2] *= 0.4
-        if playerSpeed[0] < 0.001 and playerSpeed[0] > -0.001:
-            playerSpeed[0] = 0
-        if playerSpeed[2] < 0.001 and playerSpeed[0] > -0.001:
-            playerSpeed[2] = 0
-
-    if playerPos[1] <= 20 and abovegrid(playerPos, 5):
-        if oldplayery > 20:
-            playerPos[1] = 20
-            playerSpeed = [0,0,0]
-            playerSpeed[1] = 0
-            touchground = True
-    else:
-        touchground = False
-
-    for projectile in projectiles:
-
-        oldy = projectile.pos[1]
-        if projectile.onGround == False:
-            projectile.pos[0] += projectile.vel[0]
-            projectile.pos[1] += projectile.vel[1]
-            projectile.pos[2] += projectile.vel[2]
-            projectile.vel[1] -= gravityacc
-
-        if oldy > 2 and projectile.pos[1] <= 2 and abovegrid(projectile.pos,1) == 1:
-            projectile.vel = [0,0,0]
-            projectile.pos[1] = 2
-            projectile.onGround = True
-
-        if (projectile.pos[1] < 2 and playerPos[1] >= 20) or (projectile.pos[1] >= 2 and playerPos[1] < 20):
-
-            rprojectile = rotate(projectile.pos)
-            if rprojectile[2] > 10:
-                pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
-
-
-        
-        if projectile.pos[1] < -10:
-            projectiles.remove(projectile)
-
-
-
-    polygons = []
-
-    cache = {}
-
-    a = 0
-
-    for z, row in enumerate(tiles):
-        for x, column in enumerate(row):
-            
-            if column == 1:
-                
-                tile = [[x*gridSize,0,z*gridSize],
-                        [x*gridSize,0,(z+1)*gridSize],
-                        [(x+1)*gridSize,0,(z+1)*gridSize],
-                        [(x+1)*gridSize,0,z*gridSize]]
-                        
-                points = [rotate(point) for point in tile]
-                polygon = []
-                for point in points:
-                    tpoint = tuple(point)
-                    if tpoint in cache:
-                        polygon.append(cache[tpoint])
-
-
-                    else:
-
-                        
-                        if point[2] > 10:
-                            ppoint = project(point)
-                            polygon.append(ppoint)
-                            cache[tpoint] = ppoint
-                            a += 1
-
+        for z, row in enumerate(tiles):
+            for x, column in enumerate(row):
+                if column == 1:     
+                    tile = [[x*gridSize,0,z*gridSize],
+                            [x*gridSize,0,(z+1)*gridSize],
+                            [(x+1)*gridSize,0,(z+1)*gridSize],
+                            [(x+1)*gridSize,0,z*gridSize]]            
+                    points = [Rotate(point) for point in tile]
+                    polygon = []
+                    for point in points:
+                        tpoint = tuple(point)
+                        if tpoint in cache:
+                            polygon.append(cache[tpoint])
                         else:
-                            point2 = points[points.index(point) - 1]
-                            if point2[2] > 10:
-                                intpoint = line_intersection(point, point2)
-                                tintpoint = tuple(intpoint)
-                                if tintpoint in cache:                     
-                                    polygon.append(cache[tintpoint])
-                                else:
-                                    pintpoint = project(intpoint)
-                                    polygon.append(pintpoint)
-                                    cache[tuple(intpoint)] = pintpoint
-                                    a +=1
+                            if point[2] > 10:
+                                ppoint = Project(point)
+                                polygon.append(ppoint)
+                                cache[tpoint] = ppoint
+                                a += 1
+                            else:
+                                point2 = points[points.index(point) - 1]
+                                if point2[2] > 10:
+                                    intpoint = LineIntersection(point, point2)
+                                    tintpoint = tuple(intpoint)
+                                    if tintpoint in cache:                     
+                                        polygon.append(cache[tintpoint])
+                                    else:
+                                        pintpoint = Project(intpoint)
+                                        polygon.append(pintpoint)
+                                        cache[tuple(intpoint)] = pintpoint
+                                        a +=1
 
-                            point2 = points[(points.index(point) + 1) % 4]
-                            if point2[2] > 10:
-                                
-                                intpoint = line_intersection(point, point2)
-                                tintpoint = tuple(intpoint)
-                                if tintpoint in cache:
-                                    polygon.append(cache[tintpoint])
-                                else:
-                                    pintpoint = project(intpoint)
-                                    polygon.append(pintpoint)
-                                    cache[tuple(intpoint)] = pintpoint
-                                    a +=1
+                                point2 = points[(points.index(point) + 1) % 4]
+                                if point2[2] > 10:
+                                    intpoint = LineIntersection(point, point2)
+                                    tintpoint = tuple(intpoint)
+                                    if tintpoint in cache:
+                                        polygon.append(cache[tintpoint])
+                                    else:
+                                        pintpoint = Project(intpoint)
+                                        polygon.append(pintpoint)
+                                        cache[tuple(intpoint)] = pintpoint
+                                        a +=1
 
-                if len(polygon)>2:
-                    maxx = max(polygon, key=lambda x: x[0])[0]
-                    minx = min(polygon, key=lambda x: x[0])[0]
-                    maxy = max(polygon, key=lambda x: x[1])[1]
-                    miny = min(polygon, key=lambda x: x[1])[1]
-                    
-                    if (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
-                        color = ((tile[0][0]+tile[0][2])%155+100,0,0)
-                        pygame.gfxdraw.filled_polygon(screen, polygon, color)
+                    if len(polygon)>2:
+                        maxx = max(polygon, key=lambda x: x[0])[0]
+                        minx = min(polygon, key=lambda x: x[0])[0]
+                        maxy = max(polygon, key=lambda x: x[1])[1]
+                        miny = min(polygon, key=lambda x: x[1])[1]
+                        
+                        if (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
+                            color = ((tile[0][0]+tile[0][2])%155+100,0,0)
+                            pygame.gfxdraw.filled_polygon(screen, polygon, color)
+        if singleplayer:
+            rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
+        else:
+            rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
+        if rbotPos[0][2] > 10:
 
-    for projectile in projectiles:
-        if (projectile.pos[1] >= 2 and playerPos[1] >= 20) or (projectile.pos[1] < 2 and playerPos[1] < 20):
+            pbot = [Project(rbotPos[0]), Project(rbotPos[1]), Project(rbotPos[2]), Project(rbotPos[3]), Project(rbotPos[4])]
+            
+            pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[1], pbot[2]))
+            pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
+            pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
 
-            rprojectile = rotate(projectile.pos)
-            if rprojectile[2] > 10:
-                pprojectile = project(rprojectile)
-                pygame.draw.circle(screen, (0,0,0), pprojectile, 2/rprojectile[2]*screenDistance)
+        for projectile in projectilesPos:
+            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
-    if playerPos[1] < -10:
-        exit()
+                rotatedProjectile = Rotate(projectile)
+                if rotatedProjectile[2] > 10:
+                    projectedProjectile = Project(rotatedProjectile)
+                    pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+        
+        for projectile in player2Projectiles:
+            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
-    pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
-    pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
-    pygame.draw.line(screen, (0,200,0), (screenCenter[0]+15,screenCenter[1]), (screenCenter[0]+5,screenCenter[1]),2)
-    pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]+15), (screenCenter[0],screenCenter[1]+5),2)
+                rotatedProjectile = Rotate(projectile)
+                if rotatedProjectile[2] > 10:
+                    projectedProjectile = Project(rotatedProjectile)
+                    pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
 
+        if player.pos[1] < -10:
+            ResetWorld()
+            lives -= 1
 
-
-
-
-
-    '''
-    text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
-    screen.blit(text, (100, 100))
-    text = font.render(f"{round(playerPos[0]), round(playerPos[1]), round(playerPos[2])}", True, (0, 0, 0))
-    screen.blit(text, (100, 200))
-    text = font.render(f"{round(playerSpeed[0]), round(playerSpeed[1]), round(playerSpeed[2])}", True, (0, 0, 0))
-    screen.blit(text, (100, 300))
-    text = font.render(f"{playerAngle}", True, (0, 0, 0))
-    screen.blit(text, (100, 400))
-    text = font.render(f"{len(projectiles)}", True, (0, 0, 0))
-    screen.blit(text, (100, 500))
-    '''
-    pygame.draw.rect(screen, (0,200,0), (10,10,280,150), 2)
-    text = font.render(f"player 1 lives: {1}", True, (0, 200, 0))
-    screen.blit(text, (20, 20))
-    text = font.render(f"player 2 lives: {1}", True, (0, 200, 0))
-    screen.blit(text, (20, 100))
-    pygame.display.update()
-
-
-
+        pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
+        pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
+        pygame.draw.line(screen, (0,200,0), (screenCenter[0]+15,screenCenter[1]), (screenCenter[0]+5,screenCenter[1]),2)
+        pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]+15), (screenCenter[0],screenCenter[1]+5),2)
 
 
+        text = font.render(f"{player2Lives}", True, (0, 0, 0))
+        screen.blit(text, (100, 400))
+        text = font.render(f"{lives}", True, (0, 0, 0))
+        screen.blit(text, (100, 500))
+
+
+
+        pygame.display.update()

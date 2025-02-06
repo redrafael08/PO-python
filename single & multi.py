@@ -15,10 +15,16 @@ screenCenter = (screenWidth / 2, screenHeight / 2)
 
 bg = pygame.image.load('assets\\background.png')
 
+serveron = 0
+
 while True:
+
+    pygame.mouse.set_visible(True)
+
+
     font = pygame.font.Font(None, 100)
 
-    serveron = 0
+
 
     def Button(pos,size,text,command):
         buttons.append([pos[0]-size[0]/2, pos[1]-size[1]/2, pos[0]+size[0]/2, pos[1]+size[1]/2, command])
@@ -49,6 +55,7 @@ while True:
         if serveron != 0:
             serveron.kill()
             serveron = 0
+            print('server closed')
         currentbuttons = newpage
 
     def startgame(type):
@@ -74,7 +81,10 @@ while True:
         if type == 'client' and ipaddress != '':
             singleplayer = False
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((ipaddress, 5555))
+            try:
+                s.connect((ipaddress, 5555))
+            except:
+                difpage(joinbuttons)
             s.setblocking(False)
         # running = False
 
@@ -305,26 +315,32 @@ while True:
             for projectile in projectiles:
                 projectilesPos.append([round(projectile.pos[0]),round(projectile.pos[1]),round(projectile.pos[2])])
 
-            message = str([player.pos, projectilesPos, thisExplosions, lives, hasShot, hasJumped])
-            message = message.encode()
-            s.send(message)
+            try:
+                message = str([player.pos, projectilesPos, thisExplosions, lives, hasShot, hasJumped])
+                message = message.encode()
+                s.send(message)
 
-            data = s.recv(4096)
-            data = data.decode('utf-8')
-            data = eval(data)
-            player2Pos = data[0]
-            player2Projectiles = data[1]
-            explosions = data[2]
-            if data[3] < player2Lives:
-                ResetWorld()
-                player2Lives = data[3]
-            player2Shot = data[4]
-            player2Jumped = data[5]
+                data = s.recv(4096)
+                data = data.decode('utf-8')
                 
-            thisExplosions.clear()
-            hasShot = False
+                data = eval(data)
 
-        
+                player2Pos = data[0]
+                player2Projectiles = data[1]
+                explosions = data[2]
+                if data[3] < player2Lives:
+                    ResetWorld()
+                    player2Lives = data[3]
+                player2Shot = data[4]
+                player2Jumped = data[5]
+                    
+                thisExplosions.clear()
+                hasShot = False
+            except:
+                print('connection lost')
+                running = False
+                break
+
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -333,6 +349,8 @@ while True:
             if pause == 1:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     running = False
+                    if not singleplayer:
+                        s.close()
 
 
 
@@ -466,6 +484,7 @@ while True:
 
         for projectile in projectiles:
 
+            
             oldY = projectile.pos[1]
             if projectile.onGround == False:
                 projectile.pos[0] += projectile.vel[0]
@@ -563,7 +582,7 @@ while True:
             pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
 
         for projectile in projectilesPos:
-            if (projectile.vel >= 2 and player.pos[1] >= 20) or (projectile.vel < 2 and player.pos[1] < 20):
+            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
                 rotatedProjectile = Rotate(projectile)
                 if rotatedProjectile[2] > 10:
@@ -571,7 +590,7 @@ while True:
                     pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
         
         for projectile in player2Projectiles:
-            if (projectile.vel >= 2 and player.pos[1] >= 20) or (projectile.vel < 2 and player.pos[1] < 20):
+            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
                 rotatedProjectile = Rotate(projectile)
                 if rotatedProjectile[2] > 10:
@@ -588,20 +607,12 @@ while True:
         pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]+15), (screenCenter[0],screenCenter[1]+5),2)
 
 
+        pygame.draw.rect(screen, (0,200,0), (10,10,280,130),3)
+        text = font.render(f"Player 1 lives: {player2Lives}", True, (0, 200, 0))
+        screen.blit(text, (20, 20))
+        text = font.render(f"Player 2 lives: {lives}", True, (0, 200, 0))
+        screen.blit(text, (20, 100))
 
 
 
-
-        '''
-        text = font.render(f"{round(clock.get_fps())}", True, (0, 0, 0))
-        screen.blit(text, (100, 100))
-        text = font.render(f"{round(player.pos[0]), round(player.pos[1]), round(player.pos[2])}", True, (0, 0, 0))
-        screen.blit(text, (100, 200))
-        text = font.render(f"{round(player.vel[0]), round(player.vel[1]), round(player.vel[2])}", True, (0, 0, 0))
-        screen.blit(text, (100, 300))
-        text = font.render(f"{playerAngle}", True, (0, 0, 0))
-        screen.blit(text, (100, 400))
-        text = font.render(f"{len(projectiles)}", True, (0, 0, 0))
-        screen.blit(text, (100, 500))
-        '''
         pygame.display.update()
