@@ -235,7 +235,7 @@ while True:
             self.onGround = onGround
             self.fromPlayer = fromPlayer
 
-    player = Player([200, 25, 200], [0,0,0], False)
+    player = Player([200, 200, 200], [0,0,0], False)
     walkSpeed = 3
     playerAngle = [0, 0]
     shotCooldown = 15
@@ -243,6 +243,7 @@ while True:
     lives = 5
     hasShot = False
     hasJumped = False
+    slowFallStart = 90
 
     player2Lives = 5
     player2Pos = [0,25,0]
@@ -308,13 +309,17 @@ while True:
 
     def ResetWorld():
         global lives
+        global shotCooldown
+        global slowFallStart
         for z in range(20):
             for x in range(20):
                 tiles[z][x] = 1
-        player.pos = [200, 25, 200]
+        player.pos = [200, 200, 200]
         player.vel = [0,0,0]
         player.onGround = False
         projectiles.clear()
+        shotCooldown = 15
+        slowFallStart = 90
 
     pause = -1
     running = True
@@ -452,6 +457,10 @@ while True:
 
         if shotCooldown != 0:
             shotCooldown -= 1
+
+        if slowFallStart != 0:
+            slowFallStart -= 1
+            player.vel[1] = -1
 
         oldPlayerY = player.pos[1]
         player.pos[0] += player.vel[0]
