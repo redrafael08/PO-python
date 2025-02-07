@@ -14,6 +14,7 @@ screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
 bg = pygame.image.load('assets\\background.png')
+bg = pygame.transform.scale(bg,(screenWidth,screenHeight))
 
 serveron = 0
 
@@ -221,7 +222,8 @@ while True:
 
     # Screen values
     screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
-    screenDistance = 400
+    screenDistance = screenWidth/(2*math.tan(math.radians(125/2)))
+    
     screenWidth, screenHeight = screen.get_size()
     screenCenter = (screenWidth / 2, screenHeight / 2)
 
