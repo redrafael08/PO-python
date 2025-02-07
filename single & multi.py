@@ -336,8 +336,10 @@ while True:
 
                 data = s.recv(4096)
                 data = data.decode('utf-8')
-                
-                data = eval(data)
+                try:
+                    data = eval(data)
+                except:
+                    print(data)
 
                 player2Pos = data[0]
                 player2Projectiles = data[1]
@@ -351,7 +353,7 @@ while True:
                 thisExplosions.clear()
                 hasShot = False
             except:
-                print('connection lost')
+                print('connection lost' )
                 running = False
                 break
 
@@ -442,7 +444,7 @@ while True:
                     if not singleplayer:
                         thisExplosions.append(explosionPos)
 
-                projectiles.remove(projectile)
+                    projectiles.remove(projectile)
     
         # Player logic
         if player.onGround == False:
@@ -602,7 +604,6 @@ while True:
             if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
                 rotatedProjectile = Rotate(projectile.pos)
                 if rotatedProjectile[2] > 10:
-                    print("rendered projectile")
                     projectedProjectile = Project(rotatedProjectile)
                     pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
 
