@@ -17,12 +17,17 @@ bg = pygame.image.load('assets\\background.png')
 
 serveron = 0
 
+sound = 'ON'
+music = 'ON'
+
 while True:
 
     pygame.mouse.set_visible(True)
 
-
+    fontsmall = pygame.font.Font(None, 50)
     font = pygame.font.Font(None, 100)
+
+
 
 
 
@@ -57,6 +62,26 @@ while True:
             serveron = 0
             print('server closed')
         currentbuttons = newpage
+
+    def musiconoff():
+        global music
+        if music == 'ON':
+            music = 'OFF'
+            pygame.mixer.music.stop()
+        else:
+            music = 'ON'
+            pygame.mixer.music.play()
+
+
+        
+    def soundonoff():
+        global sound
+        if sound == 'ON':
+            sound = 'OFF'
+        else:
+            sound = 'ON'
+
+        
 
     def startgame(type):
         global running, singleplayer, ipaddress, serveron, s
@@ -115,12 +140,27 @@ while True:
         lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
     ]
 
+    settingbuttons = [
+        lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, f'Sound {sound}', soundonoff),
+        lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, f'Music {music}', musiconoff),
+        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Quit', quitgame)
+    ]
+
     currentbuttons = mainbuttons
     entry = False
 
     clock = pygame.time.Clock()
     running = True
     while running:
+
+        if not pygame.mixer.music.get_busy() and music == 'ON':
+            pygame.mixer.music.load(f'assets\\song ({random.randint(1,7)}).wav')
+            pygame.mixer.music.play()
+        
+        if music == 'OFF':
+            pygame.mixer.music.stop()
+
+    
         clock.tick(60)
         screen.fill((255, 255, 255))
 
@@ -192,6 +232,12 @@ while True:
     gridSize = 20
     gravity = 0.2
 
+    def quitgame():
+        global running
+        running = False
+        if not singleplayer:
+            s.close()
+
     def Length(vector):
         return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
 
@@ -256,8 +302,6 @@ while True:
     targetPos = [200, 25, 200]
 
     tiles = []
-    clock = pygame.time.Clock()
-    font = pygame.font.Font(None, 50)
     pygame.mouse.set_visible(False)
 
     projectiles = []
@@ -327,6 +371,11 @@ while True:
         clock.tick(30)
         screen.fill((174, 255, 255))
 
+        if not pygame.mixer.music.get_busy() and music == 'ON':
+            pygame.mixer.music.load(f'assets\\song ({random.randint(1,7)}).wav')
+            pygame.mixer.music.play()
+        
+
         explosions = []
         
         if not singleplayer:
@@ -369,9 +418,11 @@ while True:
 
             if pause == 1:
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    running = False
-                    if not singleplayer:
-                        s.close()
+                    mouse = pygame.mouse.get_pos()
+                    for button in buttons:
+                        if button[0] < mouse[0] < button[2] and button[1] < mouse[1] < button[3]:
+                            button[4]()               
+
 
 
 
@@ -430,13 +481,15 @@ while True:
             player.vel[1] += 5
             player.pos[1] = 21
             player.onGround = False
-            pygame.mixer.Sound.play(jumpSound)
+            if sound == 'ON':
+                pygame.mixer.Sound.play(jumpSound)
 
         # Shoot projectile
         if (keys[pygame.K_q] or mouseClick[0]) and shotCooldown == 0:
             shotCooldown = 5
             projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -projectileSpeed + player.vel[0], sinb * projectileSpeed + player.vel[1], cosa * cosb * projectileSpeed + player.vel[2]], False, True))
-            pygame.mixer.Sound.play(shootSound)
+            if sound == 'ON':
+                pygame.mixer.Sound.play(shootSound)
             hasShot = True
 
         # Explode projectiles
@@ -578,24 +631,25 @@ while True:
             player.AddExplosionVel(explosion)
             if singleplayer:
                 bot.AddExplosionVel(explosion)
-            pygame.mixer.Sound.play(explodesound)
+            if sound == 'ON':
+                pygame.mixer.Sound.play(explodesound)
         
         player.CapVel()
         if singleplayer:
             bot.CapVel()
+        if sound == 'ON':
+            if singleplayer:
+                player2Distance = Length(Difference(player.pos, bot.pos))
+            else:
+                player2Distance = Length(Difference(player.pos, player2Pos))
+                volume = 1 / (1 + player2Distance)
+                player2ShootSound.set_volume(volume)
+                player2JumpSound.set_volume(volume)
 
-        if singleplayer:
-            player2Distance = Length(Difference(player.pos, bot.pos))
-        else:
-            player2Distance = Length(Difference(player.pos, player2Pos))
-            volume = 1 / (1 + player2Distance)
-            player2ShootSound.set_volume(volume)
-            player2JumpSound.set_volume(volume)
-
-            if player2Shot:
-                pygame.mixer.Sound.play(player2ShootSound)
-            if player2Jumped:
-                pygame.mixer.Sound.play(player2JumpSound)
+                if player2Shot:
+                    pygame.mixer.Sound.play(player2ShootSound)
+                if player2Jumped:
+                    pygame.mixer.Sound.play(player2JumpSound)
 
         for projectile in projectiles:
             oldY = projectile.pos[1]
@@ -703,7 +757,7 @@ while True:
                     if projectile.fromPlayer:
                         pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
                     else:
-                        pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                        pygame.draw.circle(screen, (100,100,100), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
         
         if not singleplayer:
             for projectile in player2Projectiles:
@@ -712,7 +766,7 @@ while True:
                     rotatedProjectile = Rotate(projectile)
                     if rotatedProjectile[2] > 10:
                         projectedProjectile = Project(rotatedProjectile)
-                        pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                        pygame.draw.circle(screen, (100,100,100), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
 
         if player.pos[1] < -10:
             ResetWorld()
@@ -725,10 +779,15 @@ while True:
 
 
         pygame.draw.rect(screen, (0,200,0), (10,10,280,130),3)
-        text = font.render(f"Player 1 lives: {player2Lives}", True, (0, 200, 0))
+        text = fontsmall.render(f"Player 1 lives: {player2Lives}", True, (0, 200, 0))
         screen.blit(text, (20, 20))
-        text = font.render(f"Player 2 lives: {lives}", True, (0, 200, 0))
+        text = fontsmall.render(f"Player 2 lives: {lives}", True, (0, 200, 0))
         screen.blit(text, (20, 100))
+        if pause == 1:
+            buttons = []
+            for button in settingbuttons:
+                button()
+
 
 
 
