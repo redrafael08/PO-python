@@ -98,7 +98,7 @@ def startgame(type):
         running = False
 
 
-    if type == 'client' and ipaddress != '':
+    if type == 'client':
         singleplayer = False
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -151,6 +151,7 @@ explodesound = pygame.mixer.Sound('assets\\explosion.wav')
 jumpSound = pygame.mixer.Sound('assets\\jump.wav')
 player2ShootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
 player2JumpSound = pygame.mixer.Sound('assets\\jump.wav')
+clicksound = pygame.mixer.Sound('assets\\click.wav')
 
 
 def quitgame():
@@ -296,6 +297,8 @@ while True:
 
                 for button in buttons:
                     if button[0] < mouse[0] < button[2] and button[1] < mouse[1] < button[3]:
+                        if sound == 'ON':
+                            pygame.mixer.Sound.play(clicksound)
                         button[4]()
 
 
@@ -446,6 +449,8 @@ while True:
                     mouse = pygame.mouse.get_pos()
                     for button in buttons:
                         if button[0] < mouse[0] < button[2] and button[1] < mouse[1] < button[3]:
+                            if sound == 'ON':
+                                pygame.mixer.Sound.play(clicksound)
                             button[4]()               
 
 
