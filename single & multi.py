@@ -271,9 +271,11 @@ def Project(point):
 
 
 def AboveGrid(position, size):
-    if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] + size >= 0:
+    try:
         if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
             return True
+    except:
+        return False
     return False
 
 def ResetWorld():
@@ -411,7 +413,10 @@ while True:
     player2Pos = [0,25,0]
 
     bots = []
-    bots.append(Bot([200, 25, 200], [0,0,0], False, [200, 25, 200], 1000000000, 60))
+    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
+    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
+    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
+    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
     botSpeed = 3
     botShotColor = (200,200,200)
 
@@ -740,9 +745,10 @@ while True:
 
                 if oldY > 2 and projectile.pos[1] <= 2 and AboveGrid(projectile.pos,1) == 1:
                     posYNeeded = projectile.pos[1] - 2
-                    projectile.pos[0] = projectile.vel[0] / projectile.vel[1] * posYNeeded
-                    projectile.pos[1] = posYNeeded
-                    projectile.pos[2] = projectile.vel[2] / projectile.vel[1] * posYNeeded
+                    projectile.pos[0] -= projectile.vel[0] / projectile.vel[1] * posYNeeded
+                    projectile.pos[1] -= posYNeeded
+                    projectile.pos[2] -= projectile.vel[2] / projectile.vel[1] * posYNeeded
+                    projectile.onGround = True
                 else:
                     projectile.vel[1] -= gravity
 
@@ -880,7 +886,7 @@ while True:
             pygame.draw.rect(screen, (0,200,0), (10,10,200,130),3)
             text = fontsmall.render(f"Lives: {lives}", True, (0, 200, 0))
             screen.blit(text, (20, 20))
-            text = fontsmall.render(f"Bots left: {lives}", True, (0, 200, 0))
+            text = fontsmall.render(f"Bots left: {len(bots)}", True, (0, 200, 0))
             screen.blit(text, (20, 100))
 
 

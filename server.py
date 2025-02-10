@@ -1,31 +1,32 @@
-import socket
+import socket # importeer socket
+
+#https://realpython.com/python-sockets/
 
 
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # maak een socket die s heet AF_INET is ipv4 en sockstream het TCP protocol voor het sturen van berichten
+s.bind((socket.gethostbyname(socket.gethostname()), 5555)) # maakt de server op het ip van de computer dat hij opvraagt met socket.gethostbyname(socket.gethostname() met poort 5555
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((socket.gethostbyname(socket.gethostname()), 5555))
 
-
-s.listen(2) # maximale aantal clienten
+s.listen(2) # luisterd naar maximaal 2 clienten
 
 print('server created')
 
 
-client, addr = s.accept()
+client, addr = s.accept() # wacht tot client met server verbinding maakt en maakt hem client en slaat adres op als addr
 print('client1 connected')
-client2, addr2 = s.accept()
-print('client2 connected')
+client2, addr2 = s.accept() # wacht tot tweede client met server verbinding maakt en maakt hem client2 en slaat adres op als addr2
+print('client2 connected') 
 
 message = 'start'
-message = message.encode()
-client.send(message)
-client2.send(message)
+message = message.encode() # maakt bytes van string start
+client.send(message) # stuurt bericht naar client
+client2.send(message) # stuurt bericht naar client2
 
-while True:
-    data = client.recv(4096)
-    client2.send(data)
-    data = client2.recv(4096)
-    client.send(data)
+while True: # herhaalt het ontvangen en sturen van data
+    data = client.recv(4096) # wacht tot client iets stuurt met een maximum van 4096 bytes naar de server en maakt dat data 
+    client2.send(data) # stuurt data naar client2
+    data = client2.recv(4096) # wacht tot client2 iets stuurt met een maximum van 4096 bytes naar de server en maakt dat data 
+    client.send(data) # stuurt data naar client1
     
 
 
