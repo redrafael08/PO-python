@@ -828,7 +828,6 @@ while True:
         else:
             rPlayer2Pos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
             if rPlayer2Pos[0][2] > 10:
-
                 pPlayer2 = [Project(rPlayer2Pos[0]), Project(rPlayer2Pos[1]), Project(rPlayer2Pos[2]), Project(rPlayer2Pos[3]), Project(rPlayer2Pos[4])]
                 
                 pygame.draw.polygon(screen, (0,160,0), (pPlayer2[0], pPlayer2[1], pPlayer2[2]))
