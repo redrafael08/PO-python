@@ -867,8 +867,11 @@ while True:
             lives -= 1
 
         if singleplayer:
-            if bot.pos[1] < -10:
-                ResetWorld()
+            for bot in bots:
+                if bot.pos[1] < -10:
+                    bots.remove(bot)
+                if len(bots) == 0:
+                    ResetWorld()
 
         pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
         pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
