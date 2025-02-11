@@ -762,12 +762,6 @@ while True:
 
                 projectile.vel[1] -= gravity
 
-            if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
-                rotatedProjectile = Rotate(projectile.pos)
-                if rotatedProjectile[2] > 10:
-                    projectedProjectile = Project(rotatedProjectile)
-                    pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
-
             if projectile.pos[1] < -10:
                 projectiles.remove(projectile)
 
@@ -834,43 +828,49 @@ while True:
                         if (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
                             color = ((tile[0][0]+tile[0][2])%155+100,0,0)
                             pygame.gfxdraw.filled_polygon(screen, polygon, color)
+        sprites = []
+
         if singleplayer:
             for bot in bots:
                 rbotPos = [Rotate(bot.pos),Rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]-5]),Rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]+5]),Rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]+5]),Rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]-5])]
                 if rbotPos[0][2] > 10:
                     pbot = [Project(rbotPos[0]), Project(rbotPos[1]), Project(rbotPos[2]), Project(rbotPos[3]), Project(rbotPos[4])]
-                
-                    pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[1], pbot[2]))
-                    pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
-                    pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
+                    sprites.append([pbot,rbotPos[0][2],'enemy'])
         else:
             rPlayer2Pos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
             if rPlayer2Pos[0][2] > 10:
                 pPlayer2 = [Project(rPlayer2Pos[0]), Project(rPlayer2Pos[1]), Project(rPlayer2Pos[2]), Project(rPlayer2Pos[3]), Project(rPlayer2Pos[4])]
-                
-                pygame.draw.polygon(screen, (0,160,0), (pPlayer2[0], pPlayer2[1], pPlayer2[2]))
-                pygame.draw.polygon(screen, (0,160,0), (pPlayer2[0], pPlayer2[3], pPlayer2[4]))
-                pygame.draw.circle(screen, (255,205,0), pPlayer2[0], 8/rPlayer2Pos[0][2]*screenDistance)
+                sprites.append([pPlayer2,rPlayer2Pos[0][2],'enemy'])
 
         for projectile in projectiles:
             if (projectile.pos[1] >= 2 and player.pos[1] >= 20) or (projectile.pos[1] < 2 and player.pos[1] < 20):
-
                 rotatedProjectile = Rotate(projectile.pos)
                 if rotatedProjectile[2] > 10:
                     projectedProjectile = Project(rotatedProjectile)
                     if projectile.fromPlayer:
-                        pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                        sprites.append([projectedProjectile,rotatedProjectile[2],'projectile'])
                     else:
-                        pygame.draw.circle(screen, (100,100,100), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                        sprites.append([projectedProjectile,rotatedProjectile[2],'projectile enemy'])
         
         if not singleplayer:
             for projectile in player2Projectiles:
                 if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
-
                     rotatedProjectile = Rotate(projectile)
                     if rotatedProjectile[2] > 10:
                         projectedProjectile = Project(rotatedProjectile)
-                        pygame.draw.circle(screen, (100,100,100), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                        sprites.append([projectedProjectile,rotatedProjectile[2],'projectile enemy'])
+
+        sprites.sort(reverse=True, key=lambda x:x[1])
+        
+        for sprite in sprites:
+            if sprite[2] == 'projectile':
+                pygame.draw.circle(screen, (0,0,0), sprite[0], 2/sprite[1]*screenDistance)
+            if sprite[2] == 'projectile enemy':
+                pygame.draw.circle(screen, (100,100,100), sprite[0], 2/sprite[1]*screenDistance)
+            if sprite[2] == 'enemy':
+                pygame.draw.polygon(screen, (0,160,0), (sprite[0][0], sprite[0][1], sprite[0][2]))
+                pygame.draw.polygon(screen, (0,160,0), (sprite[0][0], sprite[0][3], sprite[0][4]))
+                pygame.draw.circle(screen, (255,205,0), sprite[0][0], 8/sprite[1]*screenDistance)
 
         if player.pos[1] < -10:
             ResetWorld()

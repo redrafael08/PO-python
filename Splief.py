@@ -14,113 +14,329 @@ screenWidth, screenHeight = screen.get_size()
 screenCenter = (screenWidth / 2, screenHeight / 2)
 
 bg = pygame.image.load('assets\\background.png')
+bg = pygame.transform.scale(bg,(screenWidth,screenHeight))
 
 serveron = 0
+
+sound = 'ON'
+music = 'ON'
+
+fontsmall = pygame.font.Font(None, 50)
+font = pygame.font.Font(None, 100)
+
+
+
+
+def Button(pos,size,text,command):
+    buttons.append([pos[0]-size[0]/2, pos[1]-size[1]/2, pos[0]+size[0]/2, pos[1]+size[1]/2, command])
+    buttonsurface = pygame.Surface(size, pygame.SRCALPHA)
+    pygame.draw.rect(buttonsurface, (255,255,255,175), (0,0,size[0],size[1]))
+    screen.blit(buttonsurface, (pos[0]-size[0]/2, pos[1]-size[1]/2))
+    pygame.draw.rect(screen, (0,200,0), (pos[0]-size[0]/2,pos[1]-size[1]/2,size[0],size[1]), 5)
+    text = font.render(f"{text}", True, (0, 200, 0))
+    screen.blit(text, (pos[0]-text.get_width()/2, pos[1]-text.get_height()/2))
+
+def Entry(pos,size,defaulttext,text):
+    global entry
+    entry = True
+    buttonsurface = pygame.Surface(size, pygame.SRCALPHA)
+    pygame.draw.rect(buttonsurface, (255,255,255,175), (0,0,size[0],size[1]))
+    screen.blit(buttonsurface, (pos[0]-size[0]/2, pos[1]-size[1]/2))
+    pygame.draw.rect(screen, (0,200,0), (pos[0]-size[0]/2,pos[1]-size[1]/2,size[0],size[1]), 5)
+    if text == '':
+        textdisplay = font.render(f"{defaulttext}", True, (0, 200, 0))
+    else:
+        textdisplay = font.render(f"{text}", True, (0, 200, 0))
+    screen.blit(textdisplay, (pos[0]-textdisplay.get_width()/2, pos[1]-textdisplay.get_height()/2))
+
+def difpage(newpage):
+    global currentbuttons, ipaddress, serveron
+    if newpage == joinbuttons:
+        ipaddress = ''
+    if serveron != 0:
+        serveron.kill()
+        serveron = 0
+        print('server closed')
+    currentbuttons = newpage
+
+def musiconoff():
+    global music
+    if music == 'ON':
+        music = 'OFF'
+        pygame.mixer.music.stop()
+    else:
+        music = 'ON'
+        pygame.mixer.music.play()
+
+
+    
+def soundonoff():
+    global sound
+    if sound == 'ON':
+        sound = 'OFF'
+    else:
+        sound = 'ON'
+
+    
+
+def startgame(type):
+    global running, singleplayer, ipaddress, serveron, s
+
+    difpage(ipbuttons)
+
+    if type == 'server':
+        serveron = subprocess.Popen(["python", "server.py"])
+
+        ipaddress = socket.gethostbyname(socket.gethostname())
+        singleplayer = False
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((ipaddress, 5555))
+        s.setblocking(False)
+
+    if type == 'single':
+        singleplayer = True
+        running = False
+
+
+    if type == 'client':
+        singleplayer = False
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.connect((ipaddress, 5555))
+        except:
+            difpage(joinbuttons)
+        s.setblocking(False)
+
+
+buttonsize = [700,100]
+
+ipaddress = ''
+
+mainbuttons = [
+    lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Singleplayer',lambda: startgame('single')),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Multiplayer',lambda: difpage(multiplayerbuttons)),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Quit', lambda: exit())
+]
+
+multiplayerbuttons = [
+    lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Create server',lambda: startgame('server')),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join server',lambda: difpage(joinbuttons)),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(mainbuttons))
+]
+joinbuttons = [
+    lambda: Entry([screenCenter[0],screenCenter[1]],buttonsize, 'Type IP server', ipaddress),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join',lambda: startgame('client')),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
+]
+
+ipbuttons = [
+    lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, ipaddress, lambda: difpage(ipbuttons)),  
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
+]
+
+settingbuttons = [
+    lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, f'Sound {sound}', soundonoff),
+    lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, f'Music {music}', musiconoff),
+    lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Quit', quitgame)
+]
+
+
+entry = False
+
+clock = pygame.time.Clock()
+
+
+shootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
+explodesound = pygame.mixer.Sound('assets\\explosion.wav')
+jumpSound = pygame.mixer.Sound('assets\\jump.wav')
+player2ShootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
+player2JumpSound = pygame.mixer.Sound('assets\\jump.wav')
+clicksound = pygame.mixer.Sound('assets\\click.wav')
+
+botAmount = 5
+bots = []
+
+def quitgame():
+    global running
+    running = False
+    if not singleplayer:
+        s.close()
+
+def Length(vector):
+    return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
+
+def Difference(vector1, vector2):
+    return [vector1[0] - vector2[0], vector1[1] - vector2[1], vector1[2] - vector2[2]]
+
+class Player():
+    def __init__(self, pos, vel, onGround):
+        self.pos = pos
+        self.vel = vel
+        self.onGround = onGround
+    
+    def AddExplosionVel(self, explosionPos):
+        relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
+        distance = Length(relativePos)
+        direction = [relativePos[0] / distance, relativePos[1] / distance, relativePos[2] / distance]
+
+        self.vel[0] += direction[0] / distance * 10
+        self.vel[1] -= (direction[1] - 5) / distance * 10
+        self.vel[2] += direction[2] / distance * 10
+
+    def CapVel(self):
+        if self.vel[0] > horizontalVelCap:
+            self.vel[0] = horizontalVelCap
+        if self.vel[0] < -horizontalVelCap:
+            self.vel[0] = -horizontalVelCap
+        if self.vel[1] > verticalVelCap:
+            self.vel[1] = verticalVelCap
+        if self.vel[1] < -verticalVelCap:
+            self.vel[1] = -verticalVelCap
+        if self.vel[2] > horizontalVelCap:
+            self.vel[2] = horizontalVelCap
+        if self.vel[2] < -horizontalVelCap:
+            self.vel[2] = -horizontalVelCap
+    
+    def UpdatePos(self):
+        self.pos[0] += self.vel[0]
+        self.pos[1] += self.vel[1]
+        self.pos[2] += self.vel[2]
+
+class Bot():
+    def __init__(self, pos, vel, onGround, targetPos, lastMinDistance, cooldown):
+        self.pos = pos
+        self.vel = vel
+        self.onGround = onGround
+        self.targetPos = targetPos
+        self.lastMinDistance = lastMinDistance
+        self.cooldown = cooldown
+    
+    def AddExplosionVel(self, explosionPos):
+        relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
+        distance = Length(relativePos)
+        direction = [relativePos[0] / distance, relativePos[1] / distance, relativePos[2] / distance]
+
+        self.vel[0] += direction[0] / distance * 10
+        self.vel[1] -= (direction[1] - 5) / distance * 10
+        self.vel[2] += direction[2] / distance * 10
+
+    def CapVel(self):
+        if self.vel[0] > horizontalVelCap:
+            self.vel[0] = horizontalVelCap
+        if self.vel[0] < -horizontalVelCap:
+            self.vel[0] = -horizontalVelCap
+        if self.vel[1] > verticalVelCap:
+            self.vel[1] = verticalVelCap
+        if self.vel[1] < -verticalVelCap:
+            self.vel[1] = -verticalVelCap
+        if self.vel[2] > horizontalVelCap:
+            self.vel[2] = horizontalVelCap
+        if self.vel[2] < -horizontalVelCap:
+            self.vel[2] = -horizontalVelCap
+    
+    def UpdatePos(self):
+        self.pos[0] += self.vel[0]
+        self.pos[1] += self.vel[1]
+        self.pos[2] += self.vel[2]
+
+class Projectile():
+    def __init__(self, pos, vel, onGround, fromPlayer):
+        self.pos = pos
+        randomness = 0.5
+        self.vel = [vel[0] + (random.random() - 0.5) * randomness, vel[1] + (random.random() - 0.5) * randomness, vel[2] + (random.random() - 0.5) * randomness]
+        self.onGround = onGround
+        self.fromPlayer = fromPlayer
+
+# Render functions
+
+def LineIntersection(point1, point2):
+    t = (10 - point1[2]) / (point2[2] - point1[2])
+    x = point1[0] + t * (point2[0] - point1[0])
+    y = point1[1] + t * (point2[1] - point1[1])
+    return [x, y, 10]
+
+def Rotate(point):
+    dx, dy, dz = point[0] - player.pos[0], point[1] - player.pos[1], point[2] - player.pos[2]
+    xr = dz * sina + dx * cosa
+    zr = dz * cosa - dx * sina
+    yr = dy
+    x = xr
+    y = yr * cosb - zr * sinb
+    z = zr * cosb + yr * sinb
+    return [x, y, z]
+
+def Project(point):
+
+    projX = (point[0]) / (point[2]) * screenDistance + screenCenter[0]
+    projY = -(point[1]) / (point[2]) * screenDistance + screenCenter[1]
+    return [projX, projY]
+
+
+def AboveGrid(position, size):
+    try:
+        if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
+            return True
+    except:
+        return False
+    return False
+
+def RandomCoord():
+    return [random.randint(10,390), 200, random.randint(10,390)]
+
+def ResetWorld():
+    global lives
+    global shotCooldown
+    global slowFallStart
+    global bots
+    for z in range(20):
+        for x in range(20):
+            tiles[z][x] = 1
+    player.pos = [200, 200, 200]
+    player.vel = [0,0,0]
+    player.onGround = False
+    projectiles.clear()
+    shotCooldown = 15
+    slowFallStart = 90
+    
+    if singleplayer:
+        for x in range(botAmount):
+            bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60))
+
+currenttime = pygame.time.get_ticks()
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+            running = False
+
+    if pygame.time.get_ticks()-currenttime > 5000:
+        break
+
+    text = font.render(f"RMS INC. PRESENTS...", True, (255, 255, 255))
+    screen.blit(text, (screenCenter[0]-text.get_width()/2,screenCenter[1]-text.get_height()/2))
+
+    pygame.display.update()
+
+
+
 
 while True:
 
     pygame.mouse.set_visible(True)
 
-
-    font = pygame.font.Font(None, 100)
-
-
-
-    def Button(pos,size,text,command):
-        buttons.append([pos[0]-size[0]/2, pos[1]-size[1]/2, pos[0]+size[0]/2, pos[1]+size[1]/2, command])
-        buttonsurface = pygame.Surface(size, pygame.SRCALPHA)
-        pygame.draw.rect(buttonsurface, (255,255,255,175), (0,0,size[0],size[1]))
-        screen.blit(buttonsurface, (pos[0]-size[0]/2, pos[1]-size[1]/2))
-        pygame.draw.rect(screen, (0,200,0), (pos[0]-size[0]/2,pos[1]-size[1]/2,size[0],size[1]), 5)
-        text = font.render(f"{text}", True, (0, 200, 0))
-        screen.blit(text, (pos[0]-text.get_width()/2, pos[1]-text.get_height()/2))
-
-    def Entry(pos,size,defaulttext,text):
-        global entry
-        entry = True
-        buttonsurface = pygame.Surface(size, pygame.SRCALPHA)
-        pygame.draw.rect(buttonsurface, (255,255,255,175), (0,0,size[0],size[1]))
-        screen.blit(buttonsurface, (pos[0]-size[0]/2, pos[1]-size[1]/2))
-        pygame.draw.rect(screen, (0,200,0), (pos[0]-size[0]/2,pos[1]-size[1]/2,size[0],size[1]), 5)
-        if text == '':
-            textdisplay = font.render(f"{defaulttext}", True, (0, 200, 0))
-        else:
-            textdisplay = font.render(f"{text}", True, (0, 200, 0))
-        screen.blit(textdisplay, (pos[0]-textdisplay.get_width()/2, pos[1]-textdisplay.get_height()/2))
-
-    def difpage(newpage):
-        global currentbuttons, ipaddress, serveron
-        if newpage == joinbuttons:
-            ipaddress = ''
-        if serveron != 0:
-            serveron.kill()
-            serveron = 0
-            print('server closed')
-        currentbuttons = newpage
-
-    def startgame(type):
-        global running, singleplayer, ipaddress, serveron, s
-
-        difpage(ipbuttons)
-
-        if type == 'server':
-            serveron = subprocess.Popen(["python", "server.py"])
-
-            ipaddress = socket.gethostbyname(socket.gethostname())
-            singleplayer = False
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((ipaddress, 5555))
-            s.setblocking(False)
-            #running = False
-
-        if type == 'single':
-            singleplayer = True
-            running = False
-
-
-        if type == 'client' and ipaddress != '':
-            singleplayer = False
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.connect((ipaddress, 5555))
-            except:
-                difpage(joinbuttons)
-            s.setblocking(False)
-        # running = False
-
-
-    buttonsize = [700,100]
-
-    ipaddress = ''
-
-    mainbuttons = [
-        lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Singleplayer',lambda: startgame('single')),
-        lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Multiplayer',lambda: difpage(multiplayerbuttons)),
-        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Quit', lambda: exit())
-    ]
-
-    multiplayerbuttons = [
-        lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, 'Create server',lambda: startgame('server')),
-        lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join server',lambda: difpage(joinbuttons)),
-        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(mainbuttons))
-    ]
-    joinbuttons = [
-        lambda: Entry([screenCenter[0],screenCenter[1]],buttonsize, 'Type IP server', ipaddress),
-        lambda: Button([screenCenter[0],screenCenter[1]+150],buttonsize, 'Join',lambda: startgame('client')),
-        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
-    ]
-
-    ipbuttons = [
-        lambda: Button([screenCenter[0],screenCenter[1]],buttonsize, ipaddress, lambda: difpage(ipbuttons)),  
-        lambda: Button([screenCenter[0],screenCenter[1]+300],buttonsize, 'Back', lambda: difpage(multiplayerbuttons))  
-    ]
-
     currentbuttons = mainbuttons
-    entry = False
 
-    clock = pygame.time.Clock()
+
+
     running = True
     while running:
+
+        if not pygame.mixer.music.get_busy() and music == 'ON':
+            pygame.mixer.music.load(f'assets\\song ({random.randint(1,7)}).wav')
+            pygame.mixer.music.play()
+        
+
+    
         clock.tick(60)
         screen.fill((255, 255, 255))
 
@@ -135,6 +351,8 @@ while True:
 
                 for button in buttons:
                     if button[0] < mouse[0] < button[2] and button[1] < mouse[1] < button[3]:
+                        if sound == 'ON':
+                            pygame.mixer.Sound.play(clicksound)
                         button[4]()
 
 
@@ -172,87 +390,48 @@ while True:
     if singleplayer == False:
         s.setblocking(True)
 
+    # Screen values
+    screenDistance = screenWidth/(2*math.tan(math.radians(125/2)))
+    
 
-    shootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
-    explodesound = pygame.mixer.Sound('assets\\explosion.wav')
-    jumpSound = pygame.mixer.Sound('assets\\jump.wav')
-    player2ShootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
-    player2JumpSound = pygame.mixer.Sound('assets\\jump.wav')
-
-    screenDistance = 400
+    # Constants
     horizontalVelCap = 10
     verticalVelCap = 10
+    projectileSpeed = 20
+    gridSize = 20
+    gravity = 0.2
 
-    def Length(vector):
-        return (vector[0]**2 + vector[1]**2 + vector[2]**2)**0.5
+   
 
-    def Difference(vector1, vector2):
-        return [vector1[0] - vector2[0], vector1[1] - vector2[1], vector1[2] - vector2[2]]
-
-    class Player():
-        def __init__(self, pos, vel, onGround):
-            self.pos = pos
-            self.vel = vel
-            self.onGround = onGround
-        
-        def AddExplosionVel(self, explosionPos):
-            relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
-            distance = Length(relativePos)
-            direction = [relativePos[0] / distance, relativePos[1] / distance, relativePos[2] / distance]
-
-            self.vel[0] += direction[0] / distance * 10
-            self.vel[1] -= (direction[1] - 5) / distance * 10
-            self.vel[2] += direction[2] / distance * 10
-
-        def CapVel(self):
-            if self.vel[0] > horizontalVelCap:
-                self.vel[0] = horizontalVelCap
-            if self.vel[0] < -horizontalVelCap:
-                self.vel[0] = -horizontalVelCap
-            if self.vel[1] > verticalVelCap:
-                self.vel[1] = verticalVelCap
-            if self.vel[1] < -verticalVelCap:
-                self.vel[1] = -verticalVelCap
-            if self.vel[2] > horizontalVelCap:
-                self.vel[2] = horizontalVelCap
-            if self.vel[2] < -horizontalVelCap:
-                self.vel[2] = -horizontalVelCap
-
-    class Projectile():
-        def __init__(self, pos, vel, onGround, fromPlayer):
-            self.pos = pos
-            randomness = 0.5
-            self.vel = [vel[0] + (random.random() - 0.5) * randomness, vel[1] + (random.random() - 0.5) * randomness, vel[2] + (random.random() - 0.5) * randomness]
-            self.onGround = onGround
-            self.fromPlayer = fromPlayer
-
-    player = Player([200, 25, 200], [0,0,0], False)
-    player2Pos = [0,25,0]
+    player = Player([200, 200, 200], [0,0,0], False)
     walkSpeed = 3
     playerAngle = [0, 0]
-    shotCooldown = 0
+    shotCooldown = 15
     mouseSensitivity = 0.006
     lives = 5
-    player2Lives = 5
     hasShot = False
     hasJumped = False
-    projectileSpeed = 20
+    slowFallStart = 90
 
-    gridSize = 20
+    player2Lives = 5
+    player2Pos = [0,25,0]
+
+    bots = []
+    
+    for x in range(botAmount):
+        bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60))
+    botSpeed = 3
+    botShotColor = (200,200,200)
+
     tiles = []
-    clock = pygame.time.Clock()
-    font = pygame.font.Font(None, 50)
-
+    pygame.mouse.set_visible(False)
 
     projectiles = []
     thisExplosions = []
     projectilesPos = []
-    explosions = []
-    player2Projectiles = []
 
 
     veldown = 0
-    gravity = 0.2
 
 
 
@@ -263,52 +442,20 @@ while True:
         tiles.append(row)
 
 
-    # Render functions
 
-    def LineIntersection(point1, point2):
-        t = (10 - point1[2]) / (point2[2] - point1[2])
-        x = point1[0] + t * (point2[0] - point1[0])
-        y = point1[1] + t * (point2[1] - point1[1])
-        return [x, y, 10]
-
-    def Rotate(point):
-        dx, dy, dz = point[0] - player.pos[0], point[1] - player.pos[1], point[2] - player.pos[2]
-        xr = dz * sina + dx * cosa
-        zr = dz * cosa - dx * sina
-        yr = dy
-        x = xr
-        y = yr * cosb - zr * sinb
-        z = zr * cosb + yr * sinb
-        return [x, y, z]
-
-    def Project(point):
-
-        projX = (point[0]) / (point[2]) * screenDistance + screenCenter[0]
-        projY = -(point[1]) / (point[2]) * screenDistance + screenCenter[1]
-        return [projX, projY]
-
-
-    def AboveGrid(position, size):
-        if position[0] - size <= gridSize*20 and position[2] - size <= gridSize*20 and position[0] + size >= 0 and position[2] + size >= 0:
-            if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
-                return True
-        return False
-
-    def ResetWorld():
-        global lives
-        for z in range(20):
-            for x in range(20):
-                tiles[z][x] = 1
-        player.pos = [200, 25, 200]
-        player.vel = [0,0,0]
-        player.onGround = False
-        projectiles.clear()
 
     pause = -1
     running = True
     while running:
         clock.tick(30)
         screen.fill((174, 255, 255))
+
+        if not pygame.mixer.music.get_busy() and music == 'ON':
+            pygame.mixer.music.load(f'assets\\song ({random.randint(1,7)}).wav')
+            pygame.mixer.music.play()
+        
+
+        explosions = []
         
         if not singleplayer:
             projectilesPos.clear()
@@ -322,8 +469,10 @@ while True:
 
                 data = s.recv(4096)
                 data = data.decode('utf-8')
-                
-                data = eval(data)
+                try:
+                    data = eval(data)
+                except:
+                    print(data)
 
                 player2Pos = data[0]
                 player2Projectiles = data[1]
@@ -337,7 +486,7 @@ while True:
                 thisExplosions.clear()
                 hasShot = False
             except:
-                print('connection lost')
+                print('connection lost' )
                 running = False
                 break
 
@@ -348,8 +497,13 @@ while True:
 
             if pause == 1:
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    running = False
-                    s.close()
+                    mouse = pygame.mouse.get_pos()
+                    for button in buttons:
+                        if button[0] < mouse[0] < button[2] and button[1] < mouse[1] < button[3]:
+                            if sound == 'ON':
+                                pygame.mixer.Sound.play(clicksound)
+                            button[4]()               
+
 
 
 
@@ -408,13 +562,15 @@ while True:
             player.vel[1] += 5
             player.pos[1] = 21
             player.onGround = False
-            pygame.mixer.Sound.play(jumpSound)
+            if sound == 'ON':
+                pygame.mixer.Sound.play(jumpSound)
 
         # Shoot projectile
         if (keys[pygame.K_q] or mouseClick[0]) and shotCooldown == 0:
             shotCooldown = 5
             projectiles.append(Projectile(player.pos.copy(), [sina * cosb * -projectileSpeed + player.vel[0], sinb * projectileSpeed + player.vel[1], cosa * cosb * projectileSpeed + player.vel[2]], False, True))
-            pygame.mixer.Sound.play(shootSound)
+            if sound == 'ON':
+                pygame.mixer.Sound.play(shootSound)
             hasShot = True
 
         # Explode projectiles
@@ -428,29 +584,17 @@ while True:
                         thisExplosions.append(explosionPos)
 
                     projectiles.remove(projectile)
-        
-        for explosion in explosions:
-            if AboveGrid([explosion[0], 0, explosion[1]], 0):
-                pygame.mixer.Sound.play(explodesound)
-                tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
-            player.AddExplosionVel(explosion)
-            player.CapVel()
-
-        if not singleplayer:
-            player2Distance = Length(Difference(player.pos, player2Pos))
-            volume = 1 / (1 + player2Distance)
-            player2ShootSound.set_volume(volume)
-            player2JumpSound.set_volume(volume)
-            if player2Shot:
-                pygame.mixer.Sound.play(player2ShootSound)
-            if player2Jumped:
-                pygame.mixer.Sound.play(player2JumpSound)
-
+    
+        # Player logic
         if player.onGround == False:
             player.vel[1] -= 0.1
 
         if shotCooldown != 0:
             shotCooldown -= 1
+
+        if slowFallStart != 0:
+            slowFallStart -= 1
+            player.vel[1] = -1
 
         oldPlayerY = player.pos[1]
         player.pos[0] += player.vel[0]
@@ -476,25 +620,147 @@ while True:
             if oldPlayerY > 20:
                 player.pos[1] = 20
                 player.vel = [0,0,0]
-                player.vel[1] = 0
                 player.onGround = True
         else:
             player.onGround = False
 
-        for projectile in projectiles:
+        # -----------------
+        #     Bot logic
+        # -----------------
 
-            
+        if singleplayer:
+            for bot in bots:
+                if bot.onGround:
+                    botSpeed = 1
+                else:
+                    botSpeed = 0.1
+
+                if not bot.onGround and not AboveGrid(bot.pos, 5):
+                    if AboveGrid(bot.targetPos, 0):
+                        minDistance = bot.lastMinDistance
+                    else:
+                        minDistance = 100000000
+                    for z, row in enumerate(tiles):
+                        for x, column in enumerate(row):
+                            if column == 1:
+                                tilePos = [(x + 0.5) * gridSize, 0, (z + 0.5) * gridSize]
+                                relativeDistance = (tilePos[0] - bot.pos[0])**2 + (tilePos[2] - bot.pos[2])**2
+                                if relativeDistance < minDistance:
+                                    bot.targetPos = tilePos
+                                    minDistance = relativeDistance
+                    bot.lastMinDistance = minDistance
+
+                if bot.pos[0] < bot.targetPos[0] -5:
+                    bot.vel[0] += botSpeed
+                elif bot.pos[0] > bot.targetPos[0] + 5:
+                    bot.vel[0] -= botSpeed 
+                if bot.pos[2] < bot.targetPos[2] -5:
+                    bot.vel[2] += botSpeed
+                elif bot.pos[2] > bot.targetPos[2] + 5:
+                    bot.vel[2] -= botSpeed
+
+                if slowFallStart != 0:
+                    bot.vel[1] = -1
+
+                oldBotY = bot.pos[1]
+                bot.pos[0] += bot.vel[0]
+                bot.pos[1] += bot.vel[1]
+                bot.pos[2] += bot.vel[2]
+
+                if not bot.onGround:
+                    bot.vel[1] -= gravity
+                
+                if bot.onGround == False:
+                    bot.vel[0] *= 0.9
+                    bot.vel[1] *= 0.98
+                    bot.vel[2] *= 0.9
+                else:
+                    bot.vel[0] *= 0.4
+                    bot.vel[2] *= 0.4
+                    if bot.vel[0] < 0.001 and bot.vel[0] > -0.001:
+                        bot.vel[0] = 0
+                    if bot.vel[2] < 0.001 and bot.vel[0] > -0.001:
+                        bot.vel[2] = 0
+
+                if bot.pos[1] <= 20 and AboveGrid(bot.pos, 5):
+                    if oldBotY > 20:
+                        bot.pos[1] = 20
+                        bot.vel = [0,0,0]
+                        bot.onGround = True
+                else:
+                    bot.onGround = False
+
+                if bot.cooldown == 0:
+                    difference = [player.pos[0] - bot.pos[0], 0, player.pos[2] - bot.pos[2]] 
+                    distancePlayer = Length(difference)
+                    direction = [difference[0], 0.2 * distancePlayer - 30 - bot.pos[1] * 0.4, difference[2]]
+                    distanceFactor = projectileSpeed / Length(direction)
+                    direction = [direction[0] * distanceFactor, direction[1] * distanceFactor, direction[2] * distanceFactor]
+
+                    projectiles.append(Projectile(bot.pos.copy(), direction + bot.vel, False, False))
+                    if random.randint(1, 5) == 1:
+                        for projectile in projectiles:
+                            if projectile.onGround and not projectile.fromPlayer:
+                                explosionPos = [projectile.pos[0], projectile.pos[2]]
+                                explosions.append(explosionPos)
+                                try:
+                                    tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
+                                except:
+                                    pass
+                                projectiles.remove(projectile)
+
+                    bot.cooldown = 30
+                else:
+                    bot.cooldown -= 1
+
+        # Calculate explosions
+        for explosion in explosions:
+            if AboveGrid([explosion[0], 0, explosion[1]], 0):
+                tiles[int(explosion[1]/gridSize)][int(explosion[0]/gridSize)] = 0
+            player.AddExplosionVel(explosion)
+            if singleplayer:
+                bot.AddExplosionVel(explosion)
+            if sound == 'ON':
+                pygame.mixer.Sound.play(explodesound)
+        
+        player.CapVel()
+        if singleplayer:
+            bot.CapVel()
+        if sound == 'ON':
+            if singleplayer:
+                player2Distance = Length(Difference(player.pos, bot.pos))
+            else:
+                player2Distance = Length(Difference(player.pos, player2Pos))
+                volume = 1 / (1 + player2Distance)
+                player2ShootSound.set_volume(volume)
+                player2JumpSound.set_volume(volume)
+
+                if player2Shot:
+                    pygame.mixer.Sound.play(player2ShootSound)
+                if player2Jumped:
+                    pygame.mixer.Sound.play(player2JumpSound)
+
+        for projectile in projectiles:
             oldY = projectile.pos[1]
             if projectile.onGround == False:
                 projectile.pos[0] += projectile.vel[0]
                 projectile.pos[1] += projectile.vel[1]
                 projectile.pos[2] += projectile.vel[2]
-                projectile.vel[1] -= gravity
 
-            if oldY > 2 and projectile.pos[1] <= 2 and AboveGrid(projectile.pos,1) == 1:
-                projectile.vel = [0,0,0]
-                projectile.pos[1] = 2
-                projectile.onGround = True
+                if oldY > 2 and projectile.pos[1] <= 2:
+
+                    posYNeeded = projectile.pos[1] - 2
+                    projectile.pos[0] -= projectile.vel[0] / projectile.vel[1] * posYNeeded
+                    projectile.pos[1] -= posYNeeded
+                    projectile.pos[2] -= projectile.vel[2] / projectile.vel[1] * posYNeeded
+                    if AboveGrid(projectile.pos,2) == 1:
+                        projectile.onGround = True
+                    else:
+                        projectile.pos[0] += projectile.vel[0] / projectile.vel[1] * posYNeeded
+                        projectile.pos[1] += posYNeeded
+                        projectile.pos[2] += projectile.vel[2] / projectile.vel[1] * posYNeeded                       
+
+                projectile.vel[1] -= gravity
 
             if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
                 rotatedProjectile = Rotate(projectile.pos)
@@ -568,37 +834,56 @@ while True:
                         if (0 < maxx < screenWidth or 0 < maxy < screenHeight or 0 < minx < screenWidth or 0 < miny < screenHeight):
                             color = ((tile[0][0]+tile[0][2])%155+100,0,0)
                             pygame.gfxdraw.filled_polygon(screen, polygon, color)
+
         if singleplayer:
-            rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
+            for bot in bots:
+                rbotPos = [Rotate(bot.pos),Rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]-5]),Rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]+5]),Rotate([bot.pos[0]-5,bot.pos[1]-20,bot.pos[2]+5]),Rotate([bot.pos[0]+5,bot.pos[1]-20,bot.pos[2]-5])]
+                if rbotPos[0][2] > 10:
+                    pbot = [Project(rbotPos[0]), Project(rbotPos[1]), Project(rbotPos[2]), Project(rbotPos[3]), Project(rbotPos[4])]
+                
+                    pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[1], pbot[2]))
+                    pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
+                    pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
         else:
-            rbotPos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
-        if rbotPos[0][2] > 10:
+            rPlayer2Pos = [Rotate(player2Pos),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]-5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]-5,player2Pos[1]-20,player2Pos[2]+5]),Rotate([player2Pos[0]+5,player2Pos[1]-20,player2Pos[2]-5])]
+            if rPlayer2Pos[0][2] > 10:
+                pPlayer2 = [Project(rPlayer2Pos[0]), Project(rPlayer2Pos[1]), Project(rPlayer2Pos[2]), Project(rPlayer2Pos[3]), Project(rPlayer2Pos[4])]
+                
+                pygame.draw.polygon(screen, (0,160,0), (pPlayer2[0], pPlayer2[1], pPlayer2[2]))
+                pygame.draw.polygon(screen, (0,160,0), (pPlayer2[0], pPlayer2[3], pPlayer2[4]))
+                pygame.draw.circle(screen, (255,205,0), pPlayer2[0], 8/rPlayer2Pos[0][2]*screenDistance)
 
-            pbot = [Project(rbotPos[0]), Project(rbotPos[1]), Project(rbotPos[2]), Project(rbotPos[3]), Project(rbotPos[4])]
-            
-            pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[1], pbot[2]))
-            pygame.draw.polygon(screen, (0,160,0), (pbot[0], pbot[3], pbot[4]))
-            pygame.draw.circle(screen, (255,205,0), pbot[0], 8/rbotPos[0][2]*screenDistance)
+        for projectile in projectiles:
+            if (projectile.pos[1] >= 2 and player.pos[1] >= 20) or (projectile.pos[1] < 2 and player.pos[1] < 20):
 
-        for projectile in projectilesPos:
-            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
-
-                rotatedProjectile = Rotate(projectile)
+                rotatedProjectile = Rotate(projectile.pos)
                 if rotatedProjectile[2] > 10:
                     projectedProjectile = Project(rotatedProjectile)
-                    pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                    if projectile.fromPlayer:
+                        pygame.draw.circle(screen, (0,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                    else:
+                        pygame.draw.circle(screen, (100,100,100), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
         
-        for projectile in player2Projectiles:
-            if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
+        if not singleplayer:
+            for projectile in player2Projectiles:
+                if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
 
-                rotatedProjectile = Rotate(projectile)
-                if rotatedProjectile[2] > 10:
-                    projectedProjectile = Project(rotatedProjectile)
-                    pygame.draw.circle(screen, (255,0,0), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+                    rotatedProjectile = Rotate(projectile)
+                    if rotatedProjectile[2] > 10:
+                        projectedProjectile = Project(rotatedProjectile)
+                        pygame.draw.circle(screen, (100,100,100), projectedProjectile, 2/rotatedProjectile[2]*screenDistance)
+
 
         if player.pos[1] < -10:
             ResetWorld()
             lives -= 1
+
+        if singleplayer:
+            for bot in bots:
+                if bot.pos[1] < -10:
+                    bots.remove(bot)
+                if len(bots) == 0:
+                    ResetWorld()
 
         pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
         pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]-15), (screenCenter[0],screenCenter[1]-5),2)
@@ -606,11 +891,24 @@ while True:
         pygame.draw.line(screen, (0,200,0), (screenCenter[0],screenCenter[1]+15), (screenCenter[0],screenCenter[1]+5),2)
 
 
-        text = font.render(f"{player2Lives}", True, (0, 0, 0))
-        screen.blit(text, (100, 400))
-        text = font.render(f"{lives}", True, (0, 0, 0))
-        screen.blit(text, (100, 500))
+        if not singleplayer:
+            pygame.draw.rect(screen, (0,200,0), (10,10,280,130),3)
+            text = fontsmall.render(f"Player 1 lives: {lives}", True, (0, 200, 0))
+            screen.blit(text, (20, 20))
+            text = fontsmall.render(f"Player 2 lives: {player2Lives}", True, (0, 200, 0))
+            screen.blit(text, (20, 100))
+        else:
+            pygame.draw.rect(screen, (0,200,0), (10,10,200,130),3)
+            text = fontsmall.render(f"Lives: {lives}", True, (0, 200, 0))
+            screen.blit(text, (20, 20))
+            text = fontsmall.render(f"Bots left: {len(bots)}", True, (0, 200, 0))
+            screen.blit(text, (20, 100))
 
+
+        if pause == 1:
+            buttons = []
+            for button in settingbuttons:
+                button()
 
 
         pygame.display.update()
