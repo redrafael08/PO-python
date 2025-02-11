@@ -153,7 +153,7 @@ player2ShootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
 player2JumpSound = pygame.mixer.Sound('assets\\jump.wav')
 clicksound = pygame.mixer.Sound('assets\\click.wav')
 
-botAmount = 5
+botAmount = 1
 bots = []
 
 def quitgame():
@@ -843,22 +843,20 @@ while True:
                 sprites.append([pPlayer2,rPlayer2Pos[0][2],'enemy'])
 
         for projectile in projectiles:
-            if (projectile.pos[1] >= 2 and player.pos[1] >= 20) or (projectile.pos[1] < 2 and player.pos[1] < 20):
-                rotatedProjectile = Rotate(projectile.pos)
-                if rotatedProjectile[2] > 10:
-                    projectedProjectile = Project(rotatedProjectile)
-                    if projectile.fromPlayer:
-                        sprites.append([projectedProjectile,rotatedProjectile[2],'projectile'])
-                    else:
-                        sprites.append([projectedProjectile,rotatedProjectile[2],'projectile enemy'])
+            rotatedProjectile = Rotate(projectile.pos)
+            if rotatedProjectile[2] > 10:
+                projectedProjectile = Project(rotatedProjectile)
+                if projectile.fromPlayer:
+                    sprites.append([projectedProjectile,rotatedProjectile[2],'projectile'])
+                else:
+                    sprites.append([projectedProjectile,rotatedProjectile[2],'projectile enemy'])
         
         if not singleplayer:
             for projectile in player2Projectiles:
-                if (projectile[1] >= 2 and player.pos[1] >= 20) or (projectile[1] < 2 and player.pos[1] < 20):
-                    rotatedProjectile = Rotate(projectile)
-                    if rotatedProjectile[2] > 10:
-                        projectedProjectile = Project(rotatedProjectile)
-                        sprites.append([projectedProjectile,rotatedProjectile[2],'projectile enemy'])
+                rotatedProjectile = Rotate(projectile)
+                if rotatedProjectile[2] > 10:
+                    projectedProjectile = Project(rotatedProjectile)
+                    sprites.append([projectedProjectile,rotatedProjectile[2],'projectile enemy'])
 
         sprites.sort(reverse=True, key=lambda x:x[1])
         
@@ -881,6 +879,7 @@ while True:
                 if bot.pos[1] < -10:
                     bots.remove(bot)
                 if len(bots) == 0:
+                    botAmount += 1
                     ResetWorld()
 
         pygame.draw.line(screen, (0,200,0), (screenCenter[0]-15,screenCenter[1]), (screenCenter[0]-5,screenCenter[1]),2)
