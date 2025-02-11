@@ -743,14 +743,20 @@ while True:
                 projectile.pos[1] += projectile.vel[1]
                 projectile.pos[2] += projectile.vel[2]
 
-                if oldY > 2 and projectile.pos[1] <= 2 and AboveGrid(projectile.pos,1) == 1:
+                if oldY > 2 and projectile.pos[1] <= 2:
+
                     posYNeeded = projectile.pos[1] - 2
                     projectile.pos[0] -= projectile.vel[0] / projectile.vel[1] * posYNeeded
                     projectile.pos[1] -= posYNeeded
                     projectile.pos[2] -= projectile.vel[2] / projectile.vel[1] * posYNeeded
-                    projectile.onGround = True
-                else:
-                    projectile.vel[1] -= gravity
+                    if AboveGrid(projectile.pos,2) == 1:
+                        projectile.onGround = True
+                    else:
+                        projectile.pos[0] += projectile.vel[0] / projectile.vel[1] * posYNeeded
+                        projectile.pos[1] += posYNeeded
+                        projectile.pos[2] += projectile.vel[2] / projectile.vel[1] * posYNeeded                       
+
+                projectile.vel[1] -= gravity
 
             if (projectile.pos[1] < 2 and player.pos[1] >= 20) or (projectile.pos[1] >= 2 and player.pos[1] < 20):
                 rotatedProjectile = Rotate(projectile.pos)
