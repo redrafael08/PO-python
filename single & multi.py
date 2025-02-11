@@ -153,6 +153,8 @@ player2ShootSound = pygame.mixer.Sound('assets\\laserShoot.wav')
 player2JumpSound = pygame.mixer.Sound('assets\\jump.wav')
 clicksound = pygame.mixer.Sound('assets\\click.wav')
 
+botAmount = 5
+bots = []
 
 def quitgame():
     global running
@@ -278,25 +280,27 @@ def AboveGrid(position, size):
         return False
     return False
 
+def RandomCoord():
+    return [random.randint(10,390), 200, random.randint(10,390)]
+
 def ResetWorld():
     global lives
     global shotCooldown
     global slowFallStart
+    global bots
     for z in range(20):
         for x in range(20):
             tiles[z][x] = 1
     player.pos = [200, 200, 200]
     player.vel = [0,0,0]
     player.onGround = False
-    if singleplayer:
-        for bot in bots:
-            bot.pos = [200, 200, 200]
-            bot.vel = [0,0,0]
-            bot.onGround = False
     projectiles.clear()
     shotCooldown = 15
     slowFallStart = 90
-
+    
+    if singleplayer:
+        for x in range(botAmount):
+            bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60))
 
 currenttime = pygame.time.get_ticks()
 running = True
@@ -413,10 +417,9 @@ while True:
     player2Pos = [0,25,0]
 
     bots = []
-    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
-    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
-    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
-    bots.append(Bot([random.randint(10,500), 25, random.randint(10,500)], [0,0,0], False, [random.randint(10,500), 25, random.randint(10,500)], 1000000000, 60))
+    
+    for x in range(botAmount):
+        bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60))
     botSpeed = 3
     botShotColor = (200,200,200)
 
@@ -617,7 +620,6 @@ while True:
             if oldPlayerY > 20:
                 player.pos[1] = 20
                 player.vel = [0,0,0]
-                player.vel[1] = 0
                 player.onGround = True
         else:
             player.onGround = False
@@ -683,7 +685,7 @@ while True:
                 if bot.pos[1] <= 20 and AboveGrid(bot.pos, 5):
                     if oldBotY > 20:
                         bot.pos[1] = 20
-                        bot.vel[1] = 0
+                        bot.vel = [0,0,0]
                         bot.onGround = True
                 else:
                     bot.onGround = False
@@ -701,8 +703,10 @@ while True:
                             if projectile.onGround and not projectile.fromPlayer:
                                 explosionPos = [projectile.pos[0], projectile.pos[2]]
                                 explosions.append(explosionPos)
-
-                                tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
+                                try:
+                                    tiles[int(projectile.pos[2]/gridSize)][int(projectile.pos[0]/gridSize)] = 0
+                                except:
+                                    pass
                                 projectiles.remove(projectile)
 
                     bot.cooldown = 30
