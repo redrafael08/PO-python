@@ -203,13 +203,14 @@ class Player():
         self.pos[2] += self.vel[2]
 
 class Bot():
-    def __init__(self, pos, vel, onGround, targetPos, lastMinDistance, cooldown):
+    def __init__(self, pos, vel, onGround, targetPos, lastMinDistance, cooldown, speed):
         self.pos = pos
         self.vel = vel
         self.onGround = onGround
         self.targetPos = targetPos
         self.lastMinDistance = lastMinDistance
         self.cooldown = cooldown
+        self.speed = speed
     
     def AddExplosionVel(self, explosionPos):
         relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
@@ -300,7 +301,7 @@ def ResetWorld():
     
     if singleplayer:
         for x in range(botAmount):
-            bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60))
+            bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60, 1))
 
 currenttime = pygame.time.get_ticks()
 running = True
@@ -419,8 +420,7 @@ while True:
     bots = []
     
     for x in range(botAmount):
-        bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60))
-    botSpeed = 3
+        bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60, 1))
     botShotColor = (200,200,200)
 
     tiles = []
@@ -631,9 +631,9 @@ while True:
         if singleplayer:
             for bot in bots:
                 if bot.onGround:
-                    botSpeed = 1
+                    bot.speed = 1
                 else:
-                    botSpeed = 0.1
+                    bot.speed = 0.1
 
                 if not bot.onGround and not AboveGrid(bot.pos, 5):
                     if AboveGrid(bot.targetPos, 0):
@@ -649,15 +649,31 @@ while True:
                                     bot.targetPos = tilePos
                                     minDistance = relativeDistance
                     bot.lastMinDistance = minDistance
+                    if bot.pos[0] < bot.targetPos[0] -5:
+                        bot.vel[0] += bot.speed
+                    elif bot.pos[0] > bot.targetPos[0] + 5:
+                        bot.vel[0] -= bot.speed 
+                    if bot.pos[2] < bot.targetPos[2] -5:
+                        bot.vel[2] += bot.speed
+                    elif bot.pos[2] > bot.targetPos[2] + 5:
+                        bot.vel[2] -= bot.speed
+                elif bot.onGround:
+                    if bot.pos[0] < bot.targetPos[0] + 5 and bot.pos[0] > bot.targetPos[0] - 5 and bot.pos[2] < bot.targetPos[2] + 5 and bot.pos[2] > bot.targetPos[2] - 5:
+                        targetPos = RandomCoord() 	    
+                    elif not AboveGrid(bot.pos, 0):
+                        bot.vel[1] += 5
+                        bot.pos[1] = 21
 
-                if bot.pos[0] < bot.targetPos[0] -5:
-                    bot.vel[0] += botSpeed
-                elif bot.pos[0] > bot.targetPos[0] + 5:
-                    bot.vel[0] -= botSpeed 
-                if bot.pos[2] < bot.targetPos[2] -5:
-                    bot.vel[2] += botSpeed
-                elif bot.pos[2] > bot.targetPos[2] + 5:
-                    bot.vel[2] -= botSpeed
+                    if bot.pos[0] < bot.targetPos[0] -5:
+                        bot.vel[0] += bot.speed
+                    elif bot.pos[0] > bot.targetPos[0] + 5:
+                        bot.vel[0] -= bot.speed 
+                    if bot.pos[2] < bot.targetPos[2] -5:
+                        bot.vel[2] += bot.speed
+                    elif bot.pos[2] > bot.targetPos[2] + 5:
+                        bot.vel[2] -= bot.speed
+
+                
 
                 if slowFallStart != 0:
                     bot.vel[1] = -1
