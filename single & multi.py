@@ -203,14 +203,15 @@ class Player():
         self.pos[2] += self.vel[2]
 
 class Bot():
-    def __init__(self, pos, vel, onGround, targetPos, lastMinDistance, cooldown, speed):
+    def __init__(self, pos, vel, onGround, targetPos):
         self.pos = pos
         self.vel = vel
         self.onGround = onGround
         self.targetPos = targetPos
-        self.lastMinDistance = lastMinDistance
-        self.cooldown = cooldown
-        self.speed = speed
+        self.lastMinDistance = 100000000
+        self.shootCooldown = 60
+        self.targetPosCooldown = 300
+        self.speed = 0.3
     
     def AddExplosionVel(self, explosionPos):
         relativePos = [self.pos[0] - explosionPos[0], self.pos[1], self.pos[2] - explosionPos[1]]
@@ -284,6 +285,12 @@ def AboveGrid(position, size):
 def RandomCoord():
     return [random.randint(10,390), 200, random.randint(10,390)]
 
+def RandomCoordAboveGrid():
+    coord = RandomCoord()
+    while not AboveGrid(coord, 0):
+        coord = RandomCoord()
+    return coord
+
 def ResetWorld():
     global lives
     global shotCooldown
@@ -300,8 +307,9 @@ def ResetWorld():
     slowFallStart = 90
     
     if singleplayer:
+        bots.clear()
         for x in range(botAmount):
-            bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60, 1))
+            bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord()))
 
 currenttime = pygame.time.get_ticks()
 running = True
@@ -420,7 +428,7 @@ while True:
     bots = []
     
     for x in range(botAmount):
-        bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord(), 1000000000, 60, 1))
+        bots.append(Bot(RandomCoord(), [0,0,0], False, RandomCoord()))
     botShotColor = (200,200,200)
 
     tiles = []
@@ -631,49 +639,47 @@ while True:
         if singleplayer:
             for bot in bots:
                 if bot.onGround:
-                    bot.speed = 1
+                    bot.speed = 2
                 else:
-                    bot.speed = 0.1
+                    bot.speed = 0.3
 
                 if not bot.onGround and not AboveGrid(bot.pos, 5):
                     if AboveGrid(bot.targetPos, 0):
                         minDistance = bot.lastMinDistance
                     else:
                         minDistance = 100000000
-                    for z, row in enumerate(tiles):
-                        for x, column in enumerate(row):
-                            if column == 1:
-                                tilePos = [(x + 0.5) * gridSize, 0, (z + 0.5) * gridSize]
-                                relativeDistance = (tilePos[0] - bot.pos[0])**2 + (tilePos[2] - bot.pos[2])**2
-                                if relativeDistance < minDistance:
-                                    bot.targetPos = tilePos
-                                    minDistance = relativeDistance
-                    bot.lastMinDistance = minDistance
-                    if bot.pos[0] < bot.targetPos[0] -5:
-                        bot.vel[0] += bot.speed
-                    elif bot.pos[0] > bot.targetPos[0] + 5:
-                        bot.vel[0] -= bot.speed 
-                    if bot.pos[2] < bot.targetPos[2] -5:
-                        bot.vel[2] += bot.speed
-                    elif bot.pos[2] > bot.targetPos[2] + 5:
-                        bot.vel[2] -= bot.speed
+                    if bot.lastMinDistance > (bot.pos[1] - 20) * 5:
+                        for z, row in enumerate(tiles):
+                            for x, column in enumerate(row):
+                                if column == 1:
+                                    tilePos = [(x + 0.5) * gridSize, 0, (z + 0.5) * gridSize]
+                                    relativeDistance = (tilePos[0] - bot.pos[0])**2 + (tilePos[2] - bot.pos[2])**2
+                                    if relativeDistance < minDistance:
+                                        bot.targetPos = tilePos
+                                        minDistance = relativeDistance
+                        bot.lastMinDistance = minDistance
                 elif bot.onGround:
-                    if bot.pos[0] < bot.targetPos[0] + 5 and bot.pos[0] > bot.targetPos[0] - 5 and bot.pos[2] < bot.targetPos[2] + 5 and bot.pos[2] > bot.targetPos[2] - 5:
-                        targetPos = RandomCoord() 	    
+                    if bot.pos[0] < bot.targetPos[0] + 8 and bot.pos[0] > bot.targetPos[0] - 8 and bot.pos[2] < bot.targetPos[2] + 8 and bot.pos[2] > bot.targetPos[2] - 8:
+                        bot.targetPos = RandomCoordAboveGrid() 	    
                     elif not AboveGrid(bot.pos, 0):
                         bot.vel[1] += 5
                         bot.pos[1] = 21
+                    
+                    if bot.targetPosCooldown == 0:
+                        bot.targetPosCooldown = 300
+                        bot.targetPos = RandomCoordAboveGrid()
 
-                    if bot.pos[0] < bot.targetPos[0] -5:
-                        bot.vel[0] += bot.speed
-                    elif bot.pos[0] > bot.targetPos[0] + 5:
-                        bot.vel[0] -= bot.speed 
-                    if bot.pos[2] < bot.targetPos[2] -5:
-                        bot.vel[2] += bot.speed
-                    elif bot.pos[2] > bot.targetPos[2] + 5:
-                        bot.vel[2] -= bot.speed
+                if bot.pos[0] < bot.targetPos[0] -5:
+                    bot.vel[0] += bot.speed
+                elif bot.pos[0] > bot.targetPos[0] + 5:
+                    bot.vel[0] -= bot.speed 
+                if bot.pos[2] < bot.targetPos[2] -5:
+                    bot.vel[2] += bot.speed
+                elif bot.pos[2] > bot.targetPos[2] + 5:
+                    bot.vel[2] -= bot.speed
 
-                
+                if bot.targetPosCooldown != 0:
+                    bot.targetPosCooldown -= 1
 
                 if slowFallStart != 0:
                     bot.vel[1] = -1
@@ -706,7 +712,7 @@ while True:
                 else:
                     bot.onGround = False
 
-                if bot.cooldown == 0:
+                if bot.shootCooldown == 0:
                     difference = [player.pos[0] - bot.pos[0], 0, player.pos[2] - bot.pos[2]] 
                     distancePlayer = Length(difference)
                     direction = [difference[0], 0.2 * distancePlayer - 30 - bot.pos[1] * 0.4, difference[2]]
@@ -725,9 +731,9 @@ while True:
                                     pass
                                 projectiles.remove(projectile)
 
-                    bot.cooldown = 30
+                    bot.shootCooldown = 30
                 else:
-                    bot.cooldown -= 1
+                    bot.shootCooldown -= 1
 
         # Calculate explosions
         for explosion in explosions:
