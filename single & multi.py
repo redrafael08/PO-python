@@ -497,13 +497,14 @@ while True:
                 hasShot = False
             except:
                 print('connection lost' )
-                running = False
+                quitgame()
                 break
 
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pause *= -1
+                
 
             if pause == 1:
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -520,11 +521,12 @@ while True:
         keys = pygame.key.get_pressed()
         if not pause == 1:
             mouse = pygame.mouse.get_rel()
+            # Turn camera
+            playerAngle[0] -= mouse[0]*mouseSensitivity
+            playerAngle[1] -= mouse[1]*mouseSensitivity
         mouseClick = pygame.mouse.get_pressed()
         
-        # Turn camera
-        playerAngle[0] -= mouse[0]*mouseSensitivity
-        playerAngle[1] -= mouse[1]*mouseSensitivity
+
         if pause == 1: 
             pygame.mouse.set_visible(True)
         else:
@@ -897,6 +899,10 @@ while True:
         if player.pos[1] < -10:
             ResetWorld()
             lives -= 1
+            if lives == 0:
+                losttimer = 0
+
+
 
         if singleplayer:
             for bot in bots:
@@ -924,6 +930,19 @@ while True:
             screen.blit(text, (20, 20))
             text = fontsmall.render(f"Bots left: {len(bots)}", True, (0, 200, 0))
             screen.blit(text, (20, 100))
+        if lives <= 0:
+            text = font.render(f"You lost", True, (0, 200, 0))
+            screen.blit(text, (screenCenter[0]-text.get_width()/2, screenCenter[1]-text.get_height()/2))
+            losttimer += 1
+            if losttimer > 60:
+                quitgame()
+        if not singleplayer and player2Lives <= 0:
+            text = font.render(f"You Won", True, (0, 200, 0))
+            screen.blit(text, (screenCenter[0]-text.get_width()/2, screenCenter[1]-text.get_height()/2))
+
+
+
+
 
 
         if pause == 1:
