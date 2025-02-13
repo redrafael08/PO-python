@@ -398,6 +398,7 @@ while True:
 
     if singleplayer == False:
         s.setblocking(True)
+        s.settimeout(2)
 
     # Screen values
     screenDistance = screenWidth/(2*math.tan(math.radians(125/2)))
@@ -409,6 +410,7 @@ while True:
     projectileSpeed = 20
     gridSize = 20
     gravity = 0.2
+    
 
    
 
