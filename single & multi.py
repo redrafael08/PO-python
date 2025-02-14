@@ -584,6 +584,8 @@ while True:
             if sound == 'ON':
                 pygame.mixer.Sound.play(shootSound)
             hasShot = True
+            if len(projectiles) > 75:
+                projectiles.pop(0)
 
         # Explode projectiles
         if (keys[pygame.K_e] or mouseClick[2]):
