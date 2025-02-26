@@ -188,11 +188,11 @@ def Project(point): # projecteert punt op scherm
 
 
 def AboveGrid(position, size): # kijkt of vierkant boven of onder een tile zit
-    try:
-        if (-size < position[0] < 20*gridSize+size and -size < position[2] < 20*gridSize+size) and (tiles[int((position[2]-size)/gridSize)][int((position[0]-size)/gridSize)] or tiles[int((position[2]-size)/gridSize)][int((position[0]+size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]-size)/gridSize)] == 1 or tiles[int((position[2]+size)/gridSize)][int((position[0]+size)/gridSize)] == 1):
-            return True
-    except:
-        return False
+    ongridpos = [[int((position[2]-size)/gridSize),int((position[0]-size)/gridSize)], [int((position[2]+size)/gridSize),int((position[0]-size)/gridSize)], [int((position[2]-size)/gridSize),int((position[0]+size)/gridSize)], [int((position[2]+size)/gridSize),int((position[0]+size)/gridSize)]]
+    for pos in ongridpos:
+        if 0 <= pos[0] < len(tiles) and pos[1] < len(tiles[pos[0]]):
+            if tiles[pos[0]][pos[1]] == 1:
+                return True
     return False
 
 def RandomCoord(): # geeft random coordinaat
